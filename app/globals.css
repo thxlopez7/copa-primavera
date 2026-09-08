@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-400: #4ade80;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-accent: #22c55e;
+
+  --color-copaBlue-500: #0066FF;
+  --color-copaBlue-600: #0052CC;
+  --color-copaBlue-700: #003D99;
+
+  --color-navy-950: #070d18;
+  --color-navy-900: #0b1326;
+  --color-navy-800: #131e36;
+  --color-navy-700: #1e2d4a;
+  --color-navy-600: #2c3e63;
+}
+
+@layer base {
+  body {
+    color: #f8fafc;
+  }
+}
+
+.copa-padel-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-navy-900);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-navy-700);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-copaBlue-500);
+}
