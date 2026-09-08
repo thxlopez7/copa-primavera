@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copa Primavera - Torneo de Pádel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#22c55e', // Verde Pádel
+                            600: '#16a34a',
+                            accent: '#22c55e'
+                        },
+                        copaBlue: {
+                            500: '#0066FF', // Azul del Logo
+                            600: '#0052CC',
+                            700: '#003D99'
+                        },
+                        navy: {
+                            950: '#070d18', 
+                            900: '#0b1326', 
+                            800: '#131e36', 
+                            700: '#1e2d4a', 
+                            600: '#2c3e63'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Iconos de Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fuentes de Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .copa-padel-app {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #070d18;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b1326;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e2d4a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0066FF;
+        }
+    </style>
+</head>
+<body class="copa-padel-app selection:bg-copaBlue-500 selection:text-white">
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="sticky top-0 z-40 bg-navy-900/95 backdrop-blur-md border-b border-navy-800 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- LOGO OFICIAL SVG -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('inicio')">
+                    <div class="h-10 bg-copaBlue-500 rounded-lg px-3 py-1 flex items-center justify-between gap-2 border border-blue-400/30 shadow-md">
+                        <div class="text-left leading-none">
+                            <span class="text-[8px] font-black tracking-widest text-white block uppercase">TORNEO</span>
+                            <span class="text-sm font-extrabold tracking-tighter text-white block leading-tight">COPA PRIMAVERA</span>
+                            <span class="text-[7px] font-semibold text-blue-100 block tracking-wider">PILAR - PARAGUAY</span>
+                        </div>
+                        <div class="w-6 h-6 rounded-full bg-white flex items-center justify-center text-copaBlue-500 font-bold ml-1">
+                            <i class="fa-solid fa-baseball text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MENÚ ESCRITORIO -->
+                <div class="hidden md:flex items-center gap-1 font-medium text-sm">
+                    <button onclick="switchTab('inicio')" class="nav-btn text-slate-300 hover:text-white hover:bg-navy-800 px-4 py-2 rounded-lg transition" id="nav-inicio">
+                        Inicio
+                    </button>
+                    <button onclick="switchTab('noticias')" class="nav-btn text-slate-300 hover:text-white hover:bg-navy-800 px-4 py-2 rounded-lg transition" id="nav-noticias">
+                        Noticias
+                    </button>
+                    <button onclick="switchTab('fixture')" class="nav-btn text-slate-300 hover:text-white hover:bg-navy-800 px-4 py-2 rounded-lg transition" id="nav-fixture">
+                        Fixture y Llaves
+                    </button>
+                </div>
+
+                <!-- ACCIONES RÁPIDAS (INSCRIPCIÓN + BOTÓN ADMIN DE RESPALDO EN CABECERA) -->
+                <div class="hidden md:flex items-center gap-3">
+                    <button onclick="openContactModal()" class="bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold px-4 py-2.5 rounded-xl text-sm transition flex items-center gap-2 shadow-lg shadow-brand-500/20">
+                        <i class="fa-brands fa-whatsapp text-base"></i> Inscribirse
+                    </button>
+                    <button id="nav-admin-btn" onclick="openAdminModal()" class="bg-navy-800 hover:bg-navy-700 text-slate-300 hover:text-white px-3 py-2 rounded-xl border border-navy-700 text-xs transition flex items-center gap-1.5 font-bold" title="Panel Administrador">
+                        <i class="fa-solid fa-lock text-[10px]"></i> <span id="header-admin-text">Admin</span>
+                    </button>
+                </div>
+
+                <!-- BOTÓN MENÚ MÓVIL -->
+                <div class="md:hidden flex items-center gap-2">
+                    <button onclick="openAdminModal()" class="bg-navy-800 text-slate-300 p-2 rounded-lg text-xs border border-navy-700 font-bold">
+                        <i class="fa-solid fa-lock mr-1"></i> Admin
+                    </button>
+                    <button onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white p-2">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MENÚ MÓVIL DESPLEGABLE -->
+        <div id="mobile-menu" class="hidden md:hidden bg-navy-900 border-b border-navy-800 px-4 pt-2 pb-6 space-y-1">
+            <button onclick="switchTab('inicio')" class="w-full text-left text-slate-300 hover:text-white hover:bg-navy-800 px-4 py-2.5 rounded-lg text-sm">
+                Inicio
+            </button>
+            <button onclick="switchTab('noticias')" class="w-full text-left text-slate-300 hover:text-white hover:bg-navy-800 px-4 py-2.5 rounded-lg text-sm">
+                Noticias
+            </button>
+            <button onclick="switchTab('fixture')" class="w-full text-left text-slate-300 hover:text-white hover:bg-navy-800 px-4 py-2.5 rounded-lg text-sm">
+                Fixture y Llaves
+            </button>
+            <div class="pt-2 flex flex-col gap-2">
+                <button onclick="openContactModal()" class="w-full bg-brand-500 text-navy-950 font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Inscripción por WhatsApp
+                </button>
+                <button onclick="openAdminModal()" class="w-full bg-navy-800 text-slate-300 font-bold py-2 rounded-xl flex items-center justify-center gap-2 text-xs border border-navy-700">
+                    <i class="fa-solid fa-key"></i> Acceso Organizador (Admin)
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- BANNER ADMINISTRADOR ACTIVO -->
+    <div id="admin-banner" class="hidden bg-copaBlue-500 text-white text-xs font-semibold py-2.5 px-4 sticky top-20 z-30 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-sm"></i>
+            <span>MODO ADMINISTRADOR ACTIVO: Edición de categorías, parejas, noticias y carga de resultados habilitada.</span>
+        </div>
+        <button onclick="logoutAdmin()" class="bg-navy-950 hover:bg-black text-white px-3 py-1 rounded-lg text-xs font-bold transition">Cerrar Sesión Admin</button>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ==================== SECCIÓN: INICIO ==================== -->
+        <section id="tab-inicio" class="tab-content space-y-10">
+            
+            <!-- HEADER DE BIENVENIDA Y FLYER OFICIAL -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-navy-900 border border-navy-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+                <!-- COLUMNA IZQUIERDA: INFORMACIÓN Y ACCIÓN -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="inline-flex items-center gap-2 bg-copaBlue-500/10 border border-copaBlue-500/30 text-copaBlue-500 text-xs font-bold px-3 py-1 rounded-full uppercase">
+                        <i class="fa-solid fa-location-dot"></i> Pilar - Paraguay | 8 al 11 de Octubre
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Torneo <span class="text-copaBlue-500">Copa Primavera</span>
+                    </h1>
+
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Bienvenido a la plataforma oficial del torneo. Seleccioná cualquier categoría para ver su llave de partidos o comunicate directamente para inscribirte.
+                    </p>
+
+                    <!-- FECHAS Y DATOS CLAVE -->
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <div class="bg-navy-800/90 border border-navy-700/60 p-3.5 rounded-2xl">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Fechas Oficiales</span>
+                            <span class="text-base font-bold text-white block mt-0.5">8 al 11 de Octubre</span>
+                        </div>
+                    </div>
+
+                    <!-- BOTÓN PRINCIPAL INSCRIPCIÓN -->
+                    <div class="pt-2">
+                        <button onclick="openContactModal()" class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-navy-950 font-extrabold px-8 py-4 rounded-xl transition flex items-center justify-center gap-3 text-base shadow-lg shadow-brand-500/20">
+                            <i class="fa-brands fa-whatsapp text-2xl"></i>
+                            <span>Inscribirme por WhatsApp (3 Contactos)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA: AFICHE OFICIAL DEL TORNEO -->
+                <div class="lg:col-span-5 flex justify-center">
+                    <div class="relative rounded-2xl overflow-hidden border-2 border-copaBlue-500/40 shadow-2xl group max-w-sm">
+                        <img src="https://images.unsplash.com/photo-1622163642988-1ea32b023948?w=800&auto=format&fit=crop&q=80" alt="Afiche Oficial" id="img-afiche-torneo" class="w-full h-auto object-cover rounded-2xl">
+                        <div class="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent flex items-end p-4">
+                            <span class="text-xs font-bold text-white bg-copaBlue-500/90 px-3 py-1 rounded-lg backdrop-blur-sm">
+                                Afiche Oficial Torneo Copa Primavera
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN DESTACADA: ACCESO DIRECTO A LLAVES -->
+            <div class="space-y-6">
+                <div class="flex items-center justify-between border-b border-navy-800 pb-3">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white tracking-tight">Acceso Directo a Llaves por Categoría</h2>
+                        <p class="text-xs text-slate-400">Tocá cualquier categoría para ir directo a su llave de partidos o administrarla</p>
+                    </div>
+                    <span class="text-xs bg-brand-500/10 text-brand-500 border border-brand-500/20 px-3 py-1 rounded-full font-bold">
+                        <i class="fa-solid fa-sitemap mr-1"></i> Fixtures
+                    </span>
+                </div>
+
+                <div class="space-y-8">
+                    <!-- BLOQUE DAMAS -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-pink-400 flex items-center gap-2">
+                            <i class="fa-solid fa-venus"></i> Categorías Damas
+                        </h3>
+                        <div id="grid-categories-damas" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <!-- JS renderiza tarjetas -->
+                        </div>
+                    </div>
+
+                    <!-- BLOQUE CABALLEROS Y MIXTOS -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-copaBlue-500 flex items-center gap-2">
+                            <i class="fa-solid fa-mars"></i> Categorías Caballeros & Mixtos
+                        </h3>
+                        <div id="grid-categories-caballeros" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <!-- JS renderiza tarjetas -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NÚMEROS OFICIALES DE ATENCIÓN DE WHATSAPP -->
+            <div class="space-y-4 pt-4">
+                <h2 class="text-lg font-bold text-white">Contactos Oficiales de Inscripción</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <a href="https://wa.me/595975748033?text=Hola%20Facu,%20quiero%20inscribirme%20al%20Torneo%20Copa%20Primavera" target="_blank" class="bg-navy-900 border border-navy-800 hover:border-brand-500 rounded-2xl p-4 flex items-center justify-between transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-navy-800 text-brand-500 flex items-center justify-center text-xl group-hover:bg-brand-500 group-hover:text-navy-950 transition">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white">Facu Aguilera</h3>
+                                <p class="text-xs text-slate-400 font-mono">+595 975 748 033</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-500 group-hover:text-brand-500 transition"></i>
+                    </a>
+
+                    <a href="https://wa.me/595975620833?text=Hola%20Ferchu,%20quiero%20inscribirme%20al%20Torneo%20Copa%20Primavera" target="_blank" class="bg-navy-900 border border-navy-800 hover:border-brand-500 rounded-2xl p-4 flex items-center justify-between transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-navy-800 text-brand-500 flex items-center justify-center text-xl group-hover:bg-brand-500 group-hover:text-navy-950 transition">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white">Ferchu Martinez</h3>
+                                <p class="text-xs text-slate-400 font-mono">+595 975 620 833</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-500 group-hover:text-brand-500 transition"></i>
+                    </a>
+
+                    <a href="https://wa.me/595995619918?text=Hola%20Jere,%20quiero%20inscribirme%20al%20Torneo%20Copa%20Primavera" target="_blank" class="bg-navy-900 border border-navy-800 hover:border-brand-500 rounded-2xl p-4 flex items-center justify-between transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-navy-800 text-brand-500 flex items-center justify-center text-xl group-hover:bg-brand-500 group-hover:text-navy-950 transition">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white">Jere Caceres</h3>
+                                <p class="text-xs text-slate-400 font-mono">+595 995 619 918</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-500 group-hover:text-brand-500 transition"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- NOTICIAS DESTACADAS EN INICIO -->
+            <div class="space-y-4 pt-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-white">Últimas Noticias</h2>
+                    <button onclick="switchTab('noticias')" class="text-copaBlue-500 hover:underline text-xs font-semibold">Ver todas</button>
+                </div>
+                <div id="inicio-noticias-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Dinámico por JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN: NOTICIAS ==================== -->
+        <section id="tab-noticias" class="tab-content hidden space-y-6">
+            <div class="flex items-center justify-between border-b border-navy-800 pb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Noticias del Torneo</h1>
+                    <p class="text-xs text-slate-400">Información sobre fixtures, avisos y fotos del torneo.</p>
+                </div>
+                <button id="admin-add-news-btn" onclick="openNewsModal()" class="hidden bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold px-3 py-2 rounded-xl text-xs transition">
+                    + Nueva Noticia
+                </button>
+            </div>
+
+            <div id="noticias-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Noticias por JS -->
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN: FIXTURE OFICIAL ==================== -->
+        <section id="tab-fixture" class="tab-content hidden space-y-6">
+            <div class="bg-navy-900 border border-navy-800 rounded-2xl p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-copaBlue-500 text-[10px] font-bold uppercase tracking-wider block">Competencia Oficial</span>
+                        <h1 class="text-2xl font-bold text-white">Fixture & Llaves de Cuadro</h1>
+                    </div>
+                    
+                    <!-- SELECTOR DE CATEGORÍAS -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-slate-400 font-medium">Categoría:</label>
+                        <select id="select-categoria" onchange="onCategoryChange(this.value)" class="bg-navy-800 text-white text-xs font-bold border border-navy-700 rounded-xl px-3 py-2.5 outline-none focus:border-copaBlue-500">
+                            <!-- Opciones cargadas por JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- CONTROLES ADMIN DE LA CATEGORÍA SELECCIONADA -->
+                <div id="admin-category-controls" class="hidden pt-3 border-t border-navy-800 flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-xs text-blue-400 font-semibold">Administrando: <strong id="admin-cat-name-display" class="text-white underline"></strong></span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openManageCategoriesModal()" class="bg-copaBlue-500 hover:bg-copaBlue-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition">
+                            <i class="fa-solid fa-list text-white mr-1"></i> Crear / Borrar Categorías
+                        </button>
+                        <button onclick="openManagePairsModal()" class="bg-navy-800 hover:bg-navy-700 text-white text-xs px-3 py-1.5 rounded-lg border border-navy-700 font-medium transition">
+                            <i class="fa-solid fa-users text-brand-500 mr-1"></i> Cargar / Eliminar Parejas
+                        </button>
+                        <button onclick="generateFEPFixture(true)" class="bg-brand-500 hover:bg-brand-600 text-navy-950 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-rotate mr-1"></i> Regenerar Llave
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑAS DE NAVEGACIÓN DE FIXTURE -->
+            <div class="flex border-b border-navy-800 gap-2">
+                <button onclick="switchFixtureSubTab('fase1')" id="subtab-fase1" class="fixture-subtab text-xs font-bold px-4 py-2 border-b-2 border-brand-500 text-brand-500 transition">
+                    1er Partido (Clasificatorios)
+                </button>
+                <button onclick="switchFixtureSubTab('llaves')" id="subtab-llaves" class="fixture-subtab text-xs font-bold px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-white transition">
+                    Cuadro Eliminatorio Directo
+                </button>
+            </div>
+
+            <!-- CONTENIDO PESTAÑA 1: 1er PARTIDO -->
+            <div id="fixture-content-fase1" class="space-y-4">
+                <div id="list-fase1-matches" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Partidos por JS -->
+                </div>
+            </div>
+
+            <!-- CONTENIDO PESTAÑA 2: CUADRO ELIMINATORIO -->
+            <div id="fixture-content-llaves" class="hidden space-y-4">
+                <div class="bg-navy-900 border border-navy-800 rounded-2xl p-4 overflow-x-auto">
+                    <div id="bracket-container" class="min-w-[700px] py-2">
+                        <!-- Cuadro por JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PIE DE PÁGINA CON BOTÓN DE INGRESO ADMIN -->
+    <footer class="bg-navy-900 border-t border-navy-800 mt-12 text-slate-400 py-8 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-8 bg-copaBlue-500 rounded px-2 flex items-center justify-between gap-1.5 border border-blue-400/30">
+                    <div class="text-left leading-none">
+                        <span class="text-[6px] font-black tracking-widest text-white block uppercase">TORNEO</span>
+                        <span class="text-xs font-extrabold tracking-tighter text-white block leading-tight">COPA PRIMAVERA</span>
+                    </div>
+                </div>
+                <span class="text-white font-semibold">Pilar - Paraguay 2026</span>
+            </div>
+            
+            <div class="flex gap-6 items-center">
+                <button onclick="openContactModal()" class="hover:text-white font-semibold text-brand-500">
+                    <i class="fa-brands fa-whatsapp"></i> Inscribirse por WhatsApp
+                </button>
+                <a id="footer-link-ig" href="https://www.instagram.com/torneo_copa_primavera?igsi=a2EzZWJuaXpncGxx" target="_blank" class="hover:text-white">
+                    <i class="fa-brands fa-instagram"></i> Instagram
+                </a>
+                
+                <!-- BOTÓN DE INGRESO ADMIN EN EL FOOTER -->
+                <button onclick="openAdminModal()" class="bg-navy-800 hover:bg-navy-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg border border-navy-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span id="footer-admin-text">INGRESAR COMO ADMIN</span>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL VISTA DETALLADA DEL PARTIDO (PARA JUGADORES) -->
+    <div id="modal-match-detail" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-navy-900 border border-navy-800 rounded-3xl p-6 max-w-md w-full space-y-5 shadow-2xl relative">
+            <button onclick="closeModal('modal-match-detail')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center space-y-1 border-b border-navy-800 pb-3">
+                <span id="detail-match-zone" class="text-brand-500 text-[11px] font-bold uppercase tracking-wider block">Zona A</span>
+                <h3 class="text-xl font-black text-white">Detalles del Partido</h3>
+                <div class="flex justify-center items-center gap-3 text-xs text-slate-300 pt-1">
+                    <span class="bg-navy-800 px-2.5 py-1 rounded-lg border border-navy-700">
+                        <i class="fa-solid fa-location-dot text-brand-500 mr-1"></i><span id="detail-match-court">Cancha PP1</span>
+                    </span>
+                    <span class="bg-navy-800 px-2.5 py-1 rounded-lg border border-navy-700">
+                        <i class="fa-regular fa-clock text-copaBlue-500 mr-1"></i><span id="detail-match-time">A definir</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Enfrentamiento y Marcador -->
+            <div class="bg-navy-800/80 border border-navy-700 rounded-2xl p-4 space-y-4">
+                <div class="flex justify-between items-center">
+                    <span id="detail-team1" class="font-bold text-white text-sm truncate max-w-[65%]">Pareja 1</span>
+                    <span id="detail-score1" class="font-mono font-extrabold text-base px-3 py-1 bg-navy-900 rounded-lg text-brand-500 border border-navy-700">-</span>
+                </div>
+                <div class="text-center text-[10px] text-slate-500 font-bold uppercase">VS</div>
+                <div class="flex justify-between items-center">
+                    <span id="detail-team2" class="font-bold text-white text-sm truncate max-w-[65%]">Pareja 2</span>
+                    <span id="detail-score2" class="font-mono font-extrabold text-base px-3 py-1 bg-navy-900 rounded-lg text-brand-500 border border-navy-700">-</span>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <span id="detail-status" class="inline-block text-xs font-bold px-3 py-1 rounded-full bg-navy-800 text-slate-300 border border-navy-700">Programado</span>
+            </div>
+
+            <button onclick="closeModal('modal-match-detail')" class="w-full bg-navy-800 hover:bg-navy-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL SELECCIÓN DE CONTACTO DE WHATSAPP -->
+    <div id="modal-contact-select" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-navy-900 border border-navy-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <div class="text-center space-y-1">
+                <h3 class="text-lg font-bold text-white">Escribinos por WhatsApp</h3>
+                <p class="text-xs text-slate-400">Seleccioná a cualquiera de los organizadores para anotarte:</p>
+            </div>
+            <div class="space-y-2">
+                <a href="https://wa.me/595975748033?text=Hola%20Facu,%20quiero%20inscribirme%20al%20Torneo%20Copa%20Primavera" target="_blank" class="w-full bg-navy-800 hover:bg-brand-500 hover:text-navy-950 text-white font-bold p-3 rounded-xl text-xs transition flex items-center justify-between border border-navy-700">
+                    <span>Facu Aguilera</span>
+                    <span class="font-mono text-[10px]">+595 975 748 033</span>
+                </a>
+                <a href="https://wa.me/595975620833?text=Hola%20Ferchu,%20quiero%20inscribirme%20al%20Torneo%20Copa%20Primavera" target="_blank" class="w-full bg-navy-800 hover:bg-brand-500 hover:text-navy-950 text-white font-bold p-3 rounded-xl text-xs transition flex items-center justify-between border border-navy-700">
+                    <span>Ferchu Martinez</span>
+                    <span class="font-mono text-[10px]">+595 975 620 833</span>
+                </a>
+                <a href="https://wa.me/595995619918?text=Hola%20Jere,%20quiero%20inscribirme%20al%20Torneo%20Copa%20Primavera" target="_blank" class="w-full bg-navy-800 hover:bg-brand-500 hover:text-navy-950 text-white font-bold p-3 rounded-xl text-xs transition flex items-center justify-between border border-navy-700">
+                    <span>Jere Caceres</span>
+                    <span class="font-mono text-[10px]">+595 995 619 918</span>
+                </a>
+            </div>
+            <button onclick="closeModal('modal-contact-select')" class="w-full bg-transparent text-slate-400 hover:text-white text-xs pt-1">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL INICIO SESIÓN ADMINISTRADOR -->
+    <div id="modal-admin-login" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-navy-900 border border-navy-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <div class="text-center space-y-1">
+                <h3 class="text-lg font-bold text-white">Acceso de Organizador</h3>
+                <p class="text-xs text-slate-400">Ingresá la contraseña para acceder al panel de administración.</p>
+                <p class="text-[11px] text-brand-400 font-semibold pt-1">Contraseña: <code class="bg-navy-800 px-2 py-0.5 rounded text-white font-mono">1234</code> o <code class="bg-navy-800 px-2 py-0.5 rounded text-white font-mono">admin</code></p>
+            </div>
+            <div class="space-y-3">
+                <input type="password" id="input-admin-pass" placeholder="Ingresá 1234..." onkeydown="if(event.key==='Enter') submitAdminLogin()" class="w-full bg-navy-800 border border-navy-700 rounded-xl px-3 py-2 text-white text-center font-mono outline-none focus:border-brand-500">
+                <p id="admin-error-msg" class="text-xs text-rose-400 text-center font-medium hidden">Contraseña incorrecta. Probá ingresando: 1234</p>
+                <button type="button" onclick="submitAdminLogin()" class="w-full bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold py-2.5 rounded-xl text-xs transition">
+                    Ingresar
+                </button>
+                <button type="button" onclick="closeModal('modal-admin-login')" class="w-full bg-transparent text-slate-400 hover:text-white py-1.5 text-xs">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GESTIONAR CATEGORÍAS -->
+    <div id="modal-manage-categories" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-navy-900 border border-navy-800 rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] flex flex-col justify-between">
+            <div class="space-y-4 overflow-y-auto pr-1">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Administrar Categorías</h3>
+                    <p class="text-xs text-slate-400">Agregá o eliminá las categorías disponibles del torneo.</p>
+                </div>
+
+                <!-- CREAR NUEVA CATEGORÍA -->
+                <div class="bg-navy-800/80 p-3 rounded-xl border border-navy-700 space-y-2">
+                    <span class="text-xs font-bold text-white block">Nueva Categoría</span>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-new-cat-name" placeholder="Ej. Mixto Suma 10..." class="flex-1 bg-navy-900 border border-navy-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                        <button onclick="saveNewCategory()" class="bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold px-3 py-1.5 rounded-lg text-xs transition">
+                            + Agregar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LISTA DE CATEGORÍAS -->
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-slate-300 block">Categorías Actuales (<span id="count-categories">0</span>)</span>
+                    <div id="modal-categories-list" class="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                        <!-- Lista por JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTÓN SALIR -->
+            <div class="pt-3 border-t border-navy-800">
+                <button onclick="closeModal('modal-manage-categories')" class="w-full bg-copaBlue-500 hover:bg-copaBlue-600 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Listo (Guardar y Cerrar)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GESTIONAR PAREJAS POR CATEGORÍA -->
+    <div id="modal-manage-pairs" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-navy-900 border border-navy-800 rounded-2xl p-5 max-w-lg w-full space-y-4 shadow-2xl max-h-[90vh] flex flex-col justify-between">
+            <div class="space-y-4 overflow-y-auto pr-1">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Inscribir Parejas - <span id="modal-pair-cat-title" class="text-brand-500"></span></h3>
+                    <p class="text-xs text-slate-400">La llave de esta categoría se actualizará automáticamente.</p>
+                </div>
+
+                <!-- FORMULARIO AGREGAR PAREJA -->
+                <div class="bg-navy-800/80 p-3 rounded-xl border border-navy-700 space-y-3">
+                    <span class="text-xs font-bold text-white block">Nueva Pareja</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="input-j1-name" placeholder="Jugador 1..." class="w-full bg-navy-900 border border-navy-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                        <input type="text" id="input-j2-name" placeholder="Jugador 2..." class="w-full bg-navy-900 border border-navy-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="input-pair-photo" placeholder="URL Foto (opcional)..." class="w-full bg-navy-900 border border-navy-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                        <input type="text" id="input-pair-phone" placeholder="Teléfono..." class="w-full bg-navy-900 border border-navy-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                    </div>
+                    <button onclick="saveNewPair()" class="w-full bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold py-2 rounded-lg text-xs transition">
+                        + Guardar Pareja
+                    </button>
+                </div>
+
+                <!-- LISTA DE PAREJAS CREADAS -->
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-slate-300 block">Parejas Inscriptas (<span id="count-pairs-cat">0</span>)</span>
+                    <div id="modal-pairs-list" class="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                        <!-- Lista por JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTÓN DE SALIDA PRINCIPAL -->
+            <div class="pt-3 border-t border-navy-800">
+                <button onclick="closeModal('modal-manage-pairs')" class="w-full bg-copaBlue-500 hover:bg-copaBlue-600 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Listo (Guardar y Cerrar)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDICIÓN DE PARTIDO CON CASILLEROS INDIVIDUALES POR SET -->
+    <div id="modal-edit-match" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-navy-900 border border-navy-800 rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl">
+            <div>
+                <span class="text-brand-500 text-[10px] font-bold uppercase block" id="modal-match-phase">Fase</span>
+                <h3 class="text-lg font-bold text-white">Cargar Resultado & Horarios</h3>
+            </div>
+
+            <input type="hidden" id="edit-match-id">
+
+            <div class="space-y-3">
+                
+                <!-- CASILLEROS INDIVIDUALES POR SET (SOPORTA NÚMEROS GRANDES) -->
+                <div class="bg-navy-800/80 p-3 rounded-xl space-y-3 text-xs border border-navy-700">
+                    
+                    <!-- PAREJA 1 -->
+                    <div class="space-y-1">
+                        <span id="match-team1-label" class="font-bold text-white block truncate">Pareja 1</span>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="p1-set1" placeholder="Set 1" oninput="autoJumpSet(this, 'p1-set2')" class="w-1/3 bg-navy-900 border border-navy-700 rounded-lg py-2 text-center text-white font-mono font-bold text-sm outline-none focus:border-brand-500">
+                            <input type="text" id="p1-set2" placeholder="Set 2" oninput="autoJumpSet(this, 'p1-set3')" class="w-1/3 bg-navy-900 border border-navy-700 rounded-lg py-2 text-center text-white font-mono font-bold text-sm outline-none focus:border-brand-500">
+                            <input type="text" id="p1-set3" placeholder="Set 3" oninput="autoJumpSet(this, 'p2-set1')" class="w-1/3 bg-navy-900 border border-navy-700 rounded-lg py-2 text-center text-white font-mono font-bold text-sm outline-none focus:border-brand-500">
+                        </div>
+                    </div>
+
+                    <div class="text-center text-[10px] text-slate-500 font-bold uppercase tracking-wider">VS</div>
+
+                    <!-- PAREJA 2 -->
+                    <div class="space-y-1">
+                        <span id="match-team2-label" class="font-bold text-white block truncate">Pareja 2</span>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="p2-set1" placeholder="Set 1" oninput="autoJumpSet(this, 'p2-set2')" class="w-1/3 bg-navy-900 border border-navy-700 rounded-lg py-2 text-center text-white font-mono font-bold text-sm outline-none focus:border-brand-500">
+                            <input type="text" id="p2-set2" placeholder="Set 2" oninput="autoJumpSet(this, 'p2-set3')" class="w-1/3 bg-navy-900 border border-navy-700 rounded-lg py-2 text-center text-white font-mono font-bold text-sm outline-none focus:border-brand-500">
+                            <input type="text" id="p2-set3" placeholder="Set 3" class="w-1/3 bg-navy-900 border border-navy-700 rounded-lg py-2 text-center text-white font-mono font-bold text-sm outline-none focus:border-brand-500">
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SELECTOR DE FECHA Y HORA -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-0.5">Día del Partido:</label>
+                        <select id="select-match-day" class="w-full bg-navy-800 border border-navy-700 rounded-lg px-2 py-1.5 text-white">
+                            <option value="Jueves 8 Oct">Jueves 8 Oct</option>
+                            <option value="Viernes 9 Oct">Viernes 9 Oct</option>
+                            <option value="Sábado 10 Oct">Sábado 10 Oct</option>
+                            <option value="Domingo 11 Oct">Domingo 11 Oct</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-0.5">Horario:</label>
+                        <select id="select-match-time" class="w-full bg-navy-800 border border-navy-700 rounded-lg px-2 py-1.5 text-white font-mono">
+                            <!-- Horarios cargados dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SELECTOR DE CANCHAS OFICIALES -->
+                <div class="text-xs">
+                    <label class="text-[10px] text-slate-400 block mb-0.5">Cancha Asignada:</label>
+                    <select id="select-match-court" class="w-full bg-navy-800 border border-navy-700 rounded-lg px-2 py-1.5 text-white font-semibold">
+                        <option value="PP1">1 - PP1</option>
+                        <option value="PP2">2 - PP2</option>
+                        <option value="PP3">3 - PP3</option>
+                        <option value="PP4">4 - PP4</option>
+                        <option value="SPORT P 1">5 - SPORT P 1</option>
+                        <option value="SPORT P 2">6 - SPORT P 2</option>
+                        <option value="SPORT P 3">7 - SPORT P 3</option>
+                        <option value="QUINTIN PADEL">8 - QUINTIN PADEL</option>
+                    </select>
+                </div>
+
+                <div class="text-xs">
+                    <label class="text-[10px] text-slate-400 block mb-0.5">Estado del Partido:</label>
+                    <select id="input-match-status" class="w-full bg-navy-800 border border-navy-700 rounded-lg px-2.5 py-1.5 text-white font-semibold">
+                        <option value="Programado">Programado</option>
+                        <option value="En Juego">En Juego</option>
+                        <option value="Finalizado">Finalizado</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 space-y-2">
+                    <button onclick="saveMatchDetails()" class="w-full bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold py-2.5 rounded-xl text-xs transition">
+                        Guardar Resultado y Avanzar Llave
+                    </button>
+                    <button onclick="closeModal('modal-edit-match')" class="w-full bg-transparent text-slate-400 hover:text-white py-1 text-xs">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVA NOTICIA CON ARCHIVO DESDE GALERÍA -->
+    <div id="modal-news" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-navy-900 border border-navy-800 rounded-2xl p-5 max-w-md w-full space-y-3 shadow-2xl">
+            <h3 class="text-lg font-bold text-white">Publicar Noticia</h3>
+            <div class="space-y-3 text-xs">
+                <input type="text" id="input-news-title" placeholder="Título de la noticia..." class="w-full bg-navy-800 border border-navy-700 rounded-xl px-3 py-2 text-white">
+                
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Subir Imagen desde Galería / Archivo:</label>
+                    <input type="file" id="input-news-file" accept="image/*" class="w-full bg-navy-800 border border-navy-700 rounded-xl px-2 py-1 text-slate-300 text-xs">
+                </div>
+
+                <input type="text" id="input-news-image" placeholder="O pegar URL de imagen aquí..." class="w-full bg-navy-800 border border-navy-700 rounded-xl px-3 py-2 text-white">
+                <textarea id="input-news-content" rows="3" placeholder="Detalles de la noticia..." class="w-full bg-navy-800 border border-navy-700 rounded-xl p-3 text-white"></textarea>
+                
+                <div class="pt-1 space-y-2">
+                    <button onclick="saveNews()" class="w-full bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold py-2.5 rounded-xl text-xs transition">
+                        Publicar Noticia
+                    </button>
+                    <button onclick="closeModal('modal-news')" class="w-full bg-transparent text-slate-400 hover:text-white py-1 text-xs">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESTADO GLOBAL E INICIALIZACIÓN PRINCIPAL (SIN DEPENDENCIAS EXTERNAS QUE BLOQUEEN) -->
+    <script>
+        const DEFAULT_CONFIG = {
+            whatsappNumber: "595995619918", 
+            instagramHandle: "@torneo_copa_primavera",
+            instagramUrl: "https://www.instagram.com/torneo_copa_primavera?igsi=a2EzZWJuaXpncGxx",
+            clubName: "Pilar - PY",
+            tournamentDates: "8 al 11 de Octubre"
+        };
+
+        const DEFAULT_CATEGORIES = [
+            "Damas Principiantes", "Damas 8va", "Damas 7ma", "Damas Suma 11",
+            "Caballeros Principiantes", "Caballeros 8va", "Caballeros 7ma", "Caballeros 6ta", "Caballeros Suma 11", "Caballeros Suma 7",
+            "Mixto Suma 15", "Mixto Suma 12"
+        ];
+
+        const INITIAL_PAIRS = {
+            "Caballeros 7ma": [
+                { id: "p1", j1: "Gonzalo Rodríguez", j2: "Lucas Benítez", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", phone: "0995619918" },
+                { id: "p2", j1: "Nicolás Gómez", j2: "Martín Paez", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", phone: "0975748033" },
+                { id: "p3", j1: "Javier Zanetti", j2: "Esteban Cambiasso", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", phone: "0975620833" },
+                { id: "p4", j1: "Agustín Tapia", j2: "Arturo Coello", photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80", phone: "0995619918" },
+                { id: "p5", j1: "Alejandro Galán", j2: "Juan Lebrón", photo: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80", phone: "0975748033" },
+                { id: "p6", j1: "Fernando Belasteguín", j2: "Sanyo Gutiérrez", photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80", phone: "0975620833" },
+                { id: "p7", j1: "Diego Simeone", j2: "Marcelo Gallardo", photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80", phone: "0995619918" },
+                { id: "p8", j1: "Federico Chingotto", j2: "Paquito Navarro", photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80", phone: "0975748033" },
+                { id: "p9", j1: "Carlos Alcaraz", j2: "Rafael Nadal", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", phone: "0975620833" }
+            ],
+            "Damas 7ma": [
+                { id: "p10", j1: "Marta Marrero", j2: "Marta Ortega", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", phone: "0995619918" },
+                { id: "p11", j1: "Gemma Triay", j2: "Alejandra Salazar", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", phone: "0975748033" }
+            ]
+        };
+
+        const INITIAL_NEWS = [
+            {
+                id: 1,
+                title: "¡Inscripciones Abiertas - Torneo Copa Primavera Pilar PY!",
+                date: "Reciente",
+                content: "Premios en USD para categorías generales. Inscribite por WhatsApp.",
+                image: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&auto=format&fit=crop&q=80"
+            }
+        ];
+
+        window.appState = {
+            isAdmin: false,
+            config: DEFAULT_CONFIG,
+            categories: DEFAULT_CATEGORIES,
+            pairs: INITIAL_PAIRS,
+            news: INITIAL_NEWS,
+            matches: {},
+            selectedCategory: DEFAULT_CATEGORIES[6] || "Caballeros 7ma",
+            fixtureSubTab: 'fase1'
+        };
+
+        // Verificación directa de contraseña
+        window.verifyAdminPassword = function(value) {
+            if (!value) return false;
+            const clean = value.trim().toLowerCase();
+            return clean === "1234" || clean === "admin" || clean === "jereale22";
+        };
+
+        window.persistData = async function() {
+            if (window._cloudPersist) {
+                return window._cloudPersist();
+            }
+            return Promise.resolve(true);
+        };
+    </script>
+
+    <!-- FIREBASE OPCIONAL (EN CASO DE ESTAR EN ENTORNO CON BASE DE DATOS) -->
+    <script type="module">
+        try {
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+            const { getAuth, signInWithCustomToken, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+            const { getFirestore, doc, setDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'copa-primavera-pilar';
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament_store', 'main');
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data() || {};
+                        if (Array.isArray(data.categories)) window.appState.categories = data.categories;
+                        if (data.pairs && typeof data.pairs === 'object') window.appState.pairs = data.pairs;
+                        if (Array.isArray(data.news)) window.appState.news = data.news;
+                        if (data.matches && typeof data.matches === 'object') window.appState.matches = data.matches;
+
+                        if (typeof renderHomeCategoriesGrids === 'function') renderHomeCategoriesGrids();
+                        if (typeof renderCategoryDropdowns === 'function') renderCategoryDropdowns();
+                        if (typeof renderInicioNews === 'function') renderInicioNews();
+                        if (typeof renderNews === 'function') renderNews();
+                        if (typeof renderFixtureForCategory === 'function') renderFixtureForCategory(window.appState.selectedCategory);
+                    }
+                }, err => console.log("Firebase sync omitted or error:", err));
+
+                window._cloudPersist = async function() {
+                    const safeConfig = { ...(window.appState.config || {}) };
+                    delete safeConfig.adminPass;
+                    await setDoc(docRef, {
+                        categories: window.appState.categories || [],
+                        pairs: window.appState.pairs || {},
+                        news: window.appState.news || [],
+                        matches: window.appState.matches || {},
+                        config: safeConfig,
+                        updatedAt: new Date().toISOString()
+                    }, { merge: false });
+                };
+            }
+        } catch (e) {
+            console.log("Modo local activo (sin servicios externos).");
+        }
+    </script>
+
+    <!-- FUNCIONES DE INTERFAZ Y EVENTOS -->
+    <script>
+        function autoJumpSet(currentInput, nextInputId) {
+            if (currentInput.value.length >= 2) {
+                const nextInput = document.getElementById(nextInputId);
+                if (nextInput) nextInput.focus();
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-brand-500', 'bg-navy-800');
+                btn.classList.add('text-slate-300');
+            });
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.add('text-brand-500', 'bg-navy-800');
+            }
+
+            document.getElementById('mobile-menu').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function openContactModal() {
+            document.getElementById('modal-contact-select').classList.remove('hidden');
+        }
+
+        window.openAdminModal = function() {
+            if (window.appState && window.appState.isAdmin) {
+                logoutAdmin();
+            } else {
+                const modal = document.getElementById('modal-admin-login');
+                const errMsg = document.getElementById('admin-error-msg');
+                if (errMsg) errMsg.classList.add('hidden');
+                
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    const input = document.getElementById('input-admin-pass');
+                    if (input) {
+                        input.value = '';
+                        setTimeout(() => input.focus(), 100);
+                    }
+                }
+            }
+        };
+
+        window.submitAdminLogin = function() {
+            const input = document.getElementById('input-admin-pass');
+            const pass = input ? input.value.trim() : '';
+            const errMsg = document.getElementById('admin-error-msg');
+
+            if (window.verifyAdminPassword && window.verifyAdminPassword(pass)) {
+                if (!window.appState) window.appState = {};
+                window.appState.isAdmin = true;
+
+                if (errMsg) errMsg.classList.add('hidden');
+                closeModal('modal-admin-login');
+                if (input) input.value = '';
+                updateAdminUI();
+            } else {
+                if (errMsg) errMsg.classList.remove('hidden');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+            }
+        };
+
+        window.logoutAdmin = function() {
+            window.appState.isAdmin = false;
+            updateAdminUI();
+        };
+
+        function updateAdminUI() {
+            const banner = document.getElementById('admin-banner');
+            const adminControls = document.getElementById('admin-category-controls');
+            const newsAddBtn = document.getElementById('admin-add-news-btn');
+            const footerText = document.getElementById('footer-admin-text');
+            const headerText = document.getElementById('header-admin-text');
+
+            if (window.appState.isAdmin) {
+                if (banner) banner.classList.remove('hidden');
+                if (adminControls) adminControls.classList.remove('hidden');
+                if (newsAddBtn) newsAddBtn.classList.remove('hidden');
+                if (footerText) footerText.innerText = "SALIR ADMIN";
+                if (headerText) headerText.innerText = "Salir Admin";
+            } else {
+                if (banner) banner.classList.add('hidden');
+                if (adminControls) adminControls.classList.add('hidden');
+                if (newsAddBtn) newsAddBtn.classList.add('hidden');
+                if (footerText) footerText.innerText = "INGRESAR COMO ADMIN";
+                if (headerText) headerText.innerText = "Admin";
+            }
+
+            renderNews();
+            renderFixtureForCategory(window.appState.selectedCategory);
+        }
+
+        function renderHomeCategoriesGrids() {
+            const gridDamas = document.getElementById('grid-categories-damas');
+            const gridCaballeros = document.getElementById('grid-categories-caballeros');
+
+            if (!gridDamas || !gridCaballeros) return;
+
+            const damasCats = window.appState.categories.filter(c => c.toLowerCase().includes('damas'));
+            const caballerosCats = window.appState.categories.filter(c => !c.toLowerCase().includes('damas'));
+
+            gridDamas.innerHTML = damasCats.length > 0 ? damasCats.map(c => `
+                <button onclick="goToCategoryBracket('${c}')" type="button" class="bg-navy-900 border border-navy-800 hover:border-pink-500/80 hover:bg-navy-800/80 rounded-2xl p-4 flex items-center justify-between transition group text-left shadow-md w-full">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-400 font-extrabold flex items-center justify-center text-sm border border-pink-500/20 group-hover:bg-pink-500 group-hover:text-navy-950 transition">
+                            <i class="fa-solid fa-table-tennis-paddle-ball"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-white block group-hover:text-pink-400 transition">${c}</span>
+                            <span class="text-[10px] text-slate-400">${(window.appState.pairs[c] || []).length} Parejas</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-pink-400 transition transform group-hover:translate-x-0.5"></i>
+                </button>
+            `).join('') : '<p class="text-xs text-slate-500 col-span-full">No hay categorías de Damas.</p>';
+
+            gridCaballeros.innerHTML = caballerosCats.length > 0 ? caballerosCats.map(c => `
+                <button onclick="goToCategoryBracket('${c}')" type="button" class="bg-navy-900 border border-navy-800 hover:border-copaBlue-500/80 hover:bg-navy-800/80 rounded-2xl p-4 flex items-center justify-between transition group text-left shadow-md w-full">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-copaBlue-500/10 text-copaBlue-500 font-extrabold flex items-center justify-center text-sm border border-copaBlue-500/20 group-hover:bg-copaBlue-500 group-hover:text-white transition">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-white block group-hover:text-copaBlue-500 transition">${c}</span>
+                            <span class="text-[10px] text-slate-400">${(window.appState.pairs[c] || []).length} Parejas</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-copaBlue-500 transition transform group-hover:translate-x-0.5"></i>
+                </button>
+            `).join('') : '<p class="text-xs text-slate-500 col-span-full">No hay categorías de Caballeros.</p>';
+        }
+
+        function goToCategoryBracket(categoryName) {
+            window.appState.selectedCategory = categoryName;
+            const catSelect = document.getElementById('select-categoria');
+            if (catSelect) {
+                catSelect.value = categoryName;
+            }
+            switchTab('fixture');
+            renderFixtureForCategory(categoryName);
+        }
+
+        function renderInicioNews() {
+            const grid = document.getElementById('inicio-noticias-grid');
+            if (!grid) return;
+            grid.innerHTML = window.appState.news.slice(0, 3).map(n => `
+                <div class="bg-navy-900 border border-navy-800 rounded-2xl overflow-hidden flex flex-col">
+                    <img src="${n.image || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&auto=format&fit=crop&q=80'}" class="h-40 w-full object-cover" alt="${n.title}">
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-2">
+                        <div>
+                            <span class="text-[10px] font-semibold text-brand-500">${n.date}</span>
+                            <h3 class="text-sm font-bold text-white mt-0.5 line-clamp-2">${n.title}</h3>
+                            <p class="text-xs text-slate-400 mt-1 line-clamp-2">${n.content}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderNews() {
+            const grid = document.getElementById('noticias-grid');
+            if (!grid) return;
+            grid.innerHTML = window.appState.news.map(n => `
+                <div class="bg-navy-900 border border-navy-800 rounded-2xl overflow-hidden shadow-md flex flex-col relative group">
+                    <img src="${n.image || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&auto=format&fit=crop&q=80'}" class="h-44 w-full object-cover" alt="${n.title}">
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <span class="text-[10px] font-bold text-brand-500 uppercase">${n.date}</span>
+                            <h3 class="text-base font-bold text-white mt-0.5">${n.title}</h3>
+                            <p class="text-xs text-slate-300 mt-1 leading-relaxed">${n.content}</p>
+                        </div>
+                        ${window.appState.isAdmin ? `
+                            <button onclick="deleteNews(${n.id})" class="text-xs text-rose-400 hover:text-rose-300 font-bold self-end pt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i> Eliminar
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openNewsModal() {
+            document.getElementById('modal-news').classList.remove('hidden');
+        }
+
+        function saveNews() {
+            const title = document.getElementById('input-news-title').value.trim();
+            const urlImage = document.getElementById('input-news-image').value.trim();
+            const content = document.getElementById('input-news-content').value.trim();
+            const fileInput = document.getElementById('input-news-file');
+
+            if (!title || !content) {
+                alert("Por favor completa el título y el contenido.");
+                return;
+            }
+
+            function createNewsObj(imgSrc) {
+                const newObj = {
+                    id: Date.now(),
+                    title,
+                    date: "Reciente",
+                    content,
+                    image: imgSrc || "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&auto=format&fit=crop&q=80"
+                };
+
+                window.appState.news.unshift(newObj);
+                window.persistData();
+                closeModal('modal-news');
+                document.getElementById('input-news-title').value = '';
+                document.getElementById('input-news-image').value = '';
+                document.getElementById('input-news-content').value = '';
+                if (fileInput) fileInput.value = '';
+            }
+
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    createNewsObj(e.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                createNewsObj(urlImage);
+            }
+        }
+
+        function deleteNews(id) {
+            if (confirm("¿Seguro que deseas borrar esta noticia?")) {
+                window.appState.news = window.appState.news.filter(n => n.id !== id);
+                window.persistData();
+            }
+        }
+
+        function renderCategoryDropdowns() {
+            const catSelect = document.getElementById('select-categoria');
+            if (!catSelect) return;
+
+            if (window.appState.categories.length === 0) {
+                catSelect.innerHTML = `<option value="">Sin categorías</option>`;
+                return;
+            }
+
+            catSelect.innerHTML = window.appState.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            if (!window.appState.categories.includes(window.appState.selectedCategory)) {
+                window.appState.selectedCategory = window.appState.categories[0];
+            }
+            catSelect.value = window.appState.selectedCategory;
+        }
+
+        function onCategoryChange(catName) {
+            if (!catName) return;
+            window.appState.selectedCategory = catName;
+            renderFixtureForCategory(catName);
+        }
+
+        function openManageCategoriesModal() {
+            renderModalCategoriesList();
+            document.getElementById('modal-manage-categories').classList.remove('hidden');
+        }
+
+        function renderModalCategoriesList() {
+            document.getElementById('count-categories').innerText = window.appState.categories.length;
+
+            const list = document.getElementById('modal-categories-list');
+            if (window.appState.categories.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-500 py-2 text-center">No hay categorías registradas.</p>`;
+                return;
+            }
+
+            list.innerHTML = window.appState.categories.map((c, idx) => `
+                <div class="bg-navy-800 border border-navy-700 p-2.5 rounded-lg flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-500">#${idx+1}</span>
+                        <span class="font-bold text-white">${c}</span>
+                    </div>
+                    <button onclick="deleteCategory('${c}')" class="text-rose-400 hover:text-rose-300 font-bold px-1">
+                        Eliminar
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function saveNewCategory() {
+            const catName = document.getElementById('input-new-cat-name').value.trim();
+            if (!catName) {
+                alert("Ingresá un nombre para la categoría.");
+                return;
+            }
+
+            if (window.appState.categories.includes(catName)) {
+                alert("Esta categoría ya existe.");
+                return;
+            }
+
+            window.appState.categories.push(catName);
+            window.appState.pairs[catName] = [];
+            window.appState.matches[catName] = [];
+
+            window.persistData();
+            renderHomeCategoriesGrids();
+            renderCategoryDropdowns();
+            renderModalCategoriesList();
+
+            document.getElementById('input-new-cat-name').value = '';
+        }
+
+        function deleteCategory(catName) {
+            if (!confirm(`¿Eliminar la categoría "${catName}"? Se borrarán sus parejas y fixture.`)) return;
+
+            window.appState.categories = window.appState.categories.filter(c => c !== catName);
+            delete window.appState.pairs[catName];
+            delete window.appState.matches[catName];
+
+            if (window.appState.selectedCategory === catName) {
+                window.appState.selectedCategory = window.appState.categories[0] || "";
+            }
+
+            window.persistData();
+            renderHomeCategoriesGrids();
+            renderCategoryDropdowns();
+            renderModalCategoriesList();
+            renderFixtureForCategory(window.appState.selectedCategory);
+        }
+
+        function switchFixtureSubTab(subTab) {
+            window.appState.fixtureSubTab = subTab;
+            
+            document.querySelectorAll('.fixture-subtab').forEach(btn => {
+                btn.classList.remove('border-brand-500', 'text-brand-500');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            document.getElementById(`subtab-${subTab}`).classList.remove('border-transparent', 'text-slate-400');
+            document.getElementById(`subtab-${subTab}`).classList.add('border-brand-500', 'text-brand-500');
+
+            document.getElementById('fixture-content-fase1').classList.add('hidden');
+            document.getElementById('fixture-content-llaves').classList.add('hidden');
+
+            document.getElementById(`fixture-content-${subTab}`).classList.remove('hidden');
+        }
+
+        function renderFixtureForCategory(catName) {
+            if (!catName) {
+                document.getElementById('list-fase1-matches').innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">No hay categorías cargadas.</div>`;
+                document.getElementById('bracket-container').innerHTML = `<p class="text-slate-500 text-xs py-8 text-center">No hay categoría seleccionada.</p>`;
+                return;
+            }
+
+            window.appState.selectedCategory = catName;
+            const catNameDisplay = document.getElementById('admin-cat-name-display');
+            if (catNameDisplay) catNameDisplay.innerText = catName;
+
+            const categoryMatches = window.appState.matches[catName] || [];
+
+            renderFase1Matches(categoryMatches);
+            renderBracketsSection(categoryMatches);
+        }
+
+        function renderFase1Matches(matches) {
+            const container = document.getElementById('list-fase1-matches');
+            const fase1 = matches.filter(m => m.zone && m.zone.includes('1er Partido'));
+
+            if (fase1.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-slate-500 text-xs">
+                        No se han generado partidos para esta categoría aún.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = fase1.map(m => renderMatchCardHTML(m)).join('');
+        }
+
+        function renderBracketsSection(matches) {
+            const container = document.getElementById('bracket-container');
+            const bracketMatches = matches.filter(m => m.round || (m.zone && !m.zone.includes('1er Partido')));
+
+            if (bracketMatches.length === 0) {
+                container.innerHTML = `
+                    <p class="text-slate-500 text-xs py-8 text-center">No hay cuadro eliminatorio generado para esta categoría.</p>
+                `;
+                return;
+            }
+
+            const oct = bracketMatches.filter(m => m.zone.includes('Octavos') || m.round === 'Octavos');
+            const qf = bracketMatches.filter(m => m.zone.includes('Cuartos') || m.round === 'Cuartos');
+            const sf = bracketMatches.filter(m => m.zone.includes('Semifinal') || m.round === 'Semis');
+            const fn = bracketMatches.filter(m => m.zone.includes('Final') || m.round === 'Final');
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 ${oct.length > 0 ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 items-center">
+                    ${oct.length > 0 ? `
+                        <div class="space-y-3">
+                            <span class="text-[10px] font-bold uppercase text-amber-400 tracking-wider text-center block mb-1">Octavos</span>
+                            ${oct.map(m => renderMatchCardHTML(m)).join('')}
+                        </div>
+                    ` : ''}
+
+                    <div class="space-y-3">
+                        <span class="text-[10px] font-bold uppercase text-brand-500 tracking-wider text-center block mb-1">Cuartos</span>
+                        ${qf.length > 0 ? qf.map(m => renderMatchCardHTML(m)).join('') : '<p class="text-xs text-slate-500 text-center">Sin Cuartos</p>'}
+                    </div>
+
+                    <div class="space-y-3">
+                        <span class="text-[10px] font-bold uppercase text-brand-500 tracking-wider text-center block mb-1">Semifinales</span>
+                        ${sf.length > 0 ? sf.map(m => renderMatchCardHTML(m)).join('') : '<p class="text-xs text-slate-500 text-center">Sin Semis</p>'}
+                    </div>
+
+                    <div class="space-y-3">
+                        <span class="text-[10px] font-bold uppercase text-brand-500 tracking-wider text-center block mb-1">Gran Final</span>
+                        ${fn.length > 0 ? fn.map(m => `
+                            <div class="ring-1 ring-brand-500 rounded-xl">
+                                ${renderMatchCardHTML(m)}
+                            </div>
+                        `).join('') : '<p class="text-xs text-slate-500 text-center">Sin Final</p>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMatchCardHTML(m) {
+            const isFinished = m.status === 'Finalizado';
+            const isBye = m.t2.includes('BYE / Libre') || m.t1.includes('BYE / Libre');
+
+            return `
+                <div onclick="openMatchDetailModal('${m.id}')" class="bg-navy-800/80 hover:bg-navy-800 border border-navy-700 rounded-xl p-3 space-y-2 text-xs cursor-pointer transition shadow-md">
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 font-semibold border-b border-navy-700/60 pb-1.5">
+                        <span class="font-bold text-brand-500">${m.zone}</span>
+                        <span class="text-slate-300 font-medium">${m.datetime || 'A definir'} (${m.court || 'Sin cancha'})</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-white truncate max-w-[75%]">${m.t1}</span>
+                            <span class="font-mono text-xs font-bold px-1.5 py-0.5 rounded ${isFinished && isWinner(m.score1, m.score2) ? 'bg-brand-500 text-navy-950' : 'bg-navy-900 text-slate-300'}">
+                                ${m.score1 || '-'}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold ${m.t2.includes('BYE') ? 'text-amber-400 italic font-mono' : 'text-white'} truncate max-w-[75%]">${m.t2}</span>
+                            <span class="font-mono text-xs font-bold px-1.5 py-0.5 rounded ${isFinished && isWinner(m.score2, m.score1) ? 'bg-brand-500 text-navy-950' : 'bg-navy-900 text-slate-300'}">
+                                ${m.score2 || '-'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="pt-1.5 border-t border-navy-700/60 flex justify-between items-center text-[10px]">
+                        <span class="text-slate-400 hover:text-white">Ver detalles <i class="fa-solid fa-chevron-right text-[8px] ml-0.5"></i></span>
+                        ${window.appState.isAdmin && !isBye ? `
+                            <button onclick="event.stopPropagation(); openEditMatchModal('${m.id}')" class="text-copaBlue-500 hover:underline font-bold">
+                                Cargar / Editar
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function openMatchDetailModal(matchId) {
+            const cat = window.appState.selectedCategory;
+            const matches = window.appState.matches[cat] || [];
+            const m = matches.find(x => x.id === matchId);
+            if (!m) return;
+
+            document.getElementById('detail-match-zone').innerText = `${cat} - ${m.zone}`;
+            document.getElementById('detail-match-court').innerText = m.court || 'Sin Cancha';
+            document.getElementById('detail-match-time').innerText = m.datetime || 'A definir';
+            
+            document.getElementById('detail-team1').innerText = m.t1;
+            document.getElementById('detail-team2').innerText = m.t2;
+
+            document.getElementById('detail-score1').innerText = m.score1 || '-';
+            document.getElementById('detail-score2').innerText = m.score2 || '-';
+
+            const statusEl = document.getElementById('detail-status');
+            statusEl.innerText = m.status || 'Programado';
+            if (m.status === 'Finalizado') {
+                statusEl.className = 'inline-block text-xs font-bold px-3 py-1 rounded-full bg-brand-500/20 text-brand-500 border border-brand-500/30';
+            } else if (m.status === 'En Juego') {
+                statusEl.className = 'inline-block text-xs font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse';
+            } else {
+                statusEl.className = 'inline-block text-xs font-bold px-3 py-1 rounded-full bg-navy-800 text-slate-300 border border-navy-700';
+            }
+
+            document.getElementById('modal-match-detail').classList.remove('hidden');
+        }
+
+        function isWinner(scoreA, scoreB) {
+            if (!scoreA || !scoreB) return false;
+            if (scoreA === "W.O.") return true;
+            if (scoreB === "W.O.") return false;
+
+            const setsA = scoreA.trim().split(' ').map(Number);
+            const setsB = scoreB.trim().split(' ').map(Number);
+            let wA = 0, wB = 0;
+            for (let i = 0; i < Math.max(setsA.length, setsB.length); i++) {
+                if ((setsA[i] || 0) > (setsB[i] || 0)) wA++;
+                else if ((setsB[i] || 0) > (setsA[i] || 0)) wB++;
+            }
+            return wA > wB;
+        }
+
+        function generateFEPFixture(forceReset = false) {
+            const cat = window.appState.selectedCategory;
+            if (forceReset && !confirm(`¿Deseas regenerar el Fixture Oficial FEP para la categoría "${cat}"?`)) return;
+            generateFEPFixtureLogic(cat, forceReset, forceReset);
+        }
+
+        async function generateFEPFixtureLogic(cat, showAlert = false, forceReset = false) {
+            const pairs = Array.isArray(window.appState.pairs[cat]) ? window.appState.pairs[cat] : [];
+            window.appState.pairs[cat] = pairs;
+
+            const oldMatches = Array.isArray(window.appState.matches[cat]) ? window.appState.matches[cat] : [];
+            const oldById = {};
+            if (!forceReset) {
+                oldMatches.forEach(m => {
+                    if (m && m.id) oldById[m.id] = { ...m };
+                });
+            }
+
+            const newMatches = [];
+            const zones = "ABCDEFGH".split('');
+
+            const addMatch = (id, zone, round, t1, t2, court = "PP1", extra = {}) => {
+                const old = oldById[id];
+                newMatches.push({
+                    id, cat, zone, round,
+                    t1: old && old.t1 ? old.t1 : t1,
+                    t2: old && old.t2 ? old.t2 : t2,
+                    score1: old?.score1 || "",
+                    score2: old?.score2 || "",
+                    status: old?.status || "Programado",
+                    datetime: old?.datetime || "A definir",
+                    court: old?.court || court
+                });
+                Object.keys(extra || {}).forEach(key => {
+                    if (extra[key] !== undefined) newMatches[newMatches.length - 1][key] = extra[key];
+                });
+            };
+
+            const pairName = (p) => p ? `${p.j1} / ${p.j2}` : "Libre";
+
+            if (pairs.length < 2) {
+                window.appState.matches[cat] = [];
+                renderFixtureForCategory(cat);
+                await window.persistData();
+                if (showAlert) alert("Cargá al menos 2 parejas para poder armar la llave.");
+                return;
+            }
+
+            const active = pairs.map(p => ({ ...p }));
+            if (active.length % 2 !== 0) {
+                active.push({ id: "bye_" + Date.now(), j1: "BYE", j2: "Libre", isBye: true });
+            }
+
+            let zoneCount = 0;
+            for (let i = 0; i < active.length; i += 2) {
+                const code = zones[zoneCount] || `Z${zoneCount + 1}`;
+                const p1 = active[i];
+                const p2 = active[i + 1];
+                const bye = !!p2.isBye;
+
+                addMatch(
+                    `z_${code}`,
+                    `Zona ${code} (1er Partido)`,
+                    "Clasificatorios",
+                    pairName(p1),
+                    bye ? "BYE / Libre" : pairName(p2),
+                    bye ? "-" : "PP1",
+                    {
+                        code,
+                        score1: bye ? "W.O." : undefined,
+                        score2: bye ? "0 0" : undefined,
+                        status: bye ? "Finalizado" : undefined,
+                        datetime: bye ? "Automático" : undefined
+                    }
+                );
+                zoneCount++;
+            }
+
+            if (pairs.length === 14) {
+                addMatch("oct_1", "Octavos A", "Octavos", "C2", "F2", "PP1");
+                addMatch("oct_2", "Octavos B", "Octavos", "D1", "G2", "PP2");
+                addMatch("oct_3", "Octavos C", "Octavos", "E1", "B1", "PP3");
+                addMatch("oct_4", "Octavos D", "Octavos", "A1", "F1", "PP4");
+                addMatch("oct_5", "Octavos E", "Octavos", "D2", "C1", "SPORT P 1");
+                addMatch("oct_6", "Octavos F", "Octavos", "E2", "G1", "SPORT P 2");
+
+                addMatch("qf_1", "Cuartos A", "Cuartos", "A2", "Ganador Octavos A", "PP1");
+                addMatch("qf_2", "Cuartos B", "Cuartos", "Ganador Octavos B", "Ganador Octavos C", "PP2");
+                addMatch("qf_3", "Cuartos C", "Cuartos", "Ganador Octavos D", "Ganador Octavos E", "PP3");
+                addMatch("qf_4", "Cuartos D", "Cuartos", "Ganador Octavos F", "B2", "PP4");
+
+                addMatch("sf_1", "Semis A", "Semis", "Ganador Cuartos A", "Ganador Cuartos B", "PP1");
+                addMatch("sf_2", "Semis B", "Semis", "Ganador Cuartos C", "Ganador Cuartos D", "PP2");
+            }
+            else if (pairs.length === 9 || pairs.length === 10) {
+                addMatch("oct_1", "Octavos A", "Octavos", "C2", "D2", "PP1");
+                addMatch("oct_2", "Octavos B", "B2", "E2", "PP2");
+
+                addMatch("qf_1", "Cuartos A", "Cuartos", "A1", "Ganador Octavos A", "PP1");
+                addMatch("qf_2", "Cuartos B", "Cuartos", "B1", "A2", "PP2");
+                addMatch("qf_3", "Cuartos C", "Cuartos", "C1", "Ganador Octavos B", "PP3");
+                addMatch("qf_4", "Cuartos D", "Cuartos", "D1", "E1", "PP4");
+
+                addMatch("sf_1", "Semis A", "Semis", "Ganador Cuartos A", "Ganador Cuartos B", "PP1");
+                addMatch("sf_2", "Semis B", "Semis", "Ganador Cuartos C", "Ganador Cuartos D", "PP2");
+            }
+            else if (pairs.length === 16) {
+                addMatch("qf_1", "Cuartos A", "Cuartos", "Ganador Zona A (A1)", "Ganador Zona B (B1)", "PP1");
+                addMatch("qf_2", "Cuartos B", "Cuartos", "Ganador Zona C (C1)", "Ganador Zona D (D1)", "PP2");
+                addMatch("qf_3", "Cuartos C", "Cuartos", "Ganador Zona E (E1)", "Ganador Zona F (F1)", "PP3");
+                addMatch("qf_4", "Cuartos D", "Cuartos", "Ganador Zona G (G1)", "Ganador Zona H (H1)", "PP4");
+                addMatch("sf_1", "Semis A", "Semis", "Ganador Cuartos A", "Ganador Cuartos B", "PP1");
+                addMatch("sf_2", "Semis B", "Semis", "Ganador Cuartos C", "Ganador Cuartos D", "PP2");
+            }
+            else {
+                const qfCount = Math.min(4, Math.ceil(zoneCount / 2));
+                for (let q = 0; q < qfCount; q++) {
+                    const a = zones[q * 2];
+                    const b = zones[q * 2 + 1];
+                    if (!a) break;
+                    addMatch(
+                        `qf_${q + 1}`,
+                        `Cuartos ${String.fromCharCode(65 + q)}`,
+                        "Cuartos",
+                        `Ganador Zona ${a} (${a}1)`,
+                        b && q * 2 + 1 < zoneCount ? `Ganador Zona ${b} (${b}1)` : "Libre",
+                        `PP${(q % 4) + 1}`
+                    );
+                }
+                addMatch("sf_1", "Semis A", "Semis", "Ganador Cuartos A", "Ganador Cuartos B", "PP1");
+                addMatch("sf_2", "Semis B", "Semis", "Ganador Cuartos C", "Ganador Cuartos D", "PP2");
+            }
+
+            addMatch("fn_1", "Final", "Final", "Ganador Semis A", "Ganador Semis B", "PP1");
+
+            const replaceToken = (token, value) => {
+                newMatches.forEach(target => {
+                    if (typeof target.t1 === "string" && target.t1 === token) target.t1 = value;
+                    if (typeof target.t2 === "string" && target.t2 === token) target.t2 = value;
+                });
+            };
+
+            newMatches.forEach(m => {
+                if (m.status !== "Finalizado" || !m.score1 || !m.score2) return;
+
+                const winner = isWinner(m.score1, m.score2) ? m.t1 : m.t2;
+                const loser = isWinner(m.score1, m.score2) ? m.t2 : m.t1;
+
+                if (m.code) {
+                    replaceToken(`${m.code}1`, winner);
+                    replaceToken(`${m.code}2`, loser);
+                    replaceToken(`Ganador Zona ${m.code} (${m.code}1)`, winner);
+                }
+
+                const round = m.round;
+                if (round === "Octavos" || round === "Cuartos" || round === "Semis") {
+                    newMatches.forEach(target => {
+                        if (target.t1 === `Ganador ${m.zone}`) target.t1 = winner;
+                        if (target.t2 === `Ganador ${m.zone}`) target.t2 = winner;
+                    });
+                }
+            });
+
+            window.appState.matches[cat] = newMatches;
+            renderFixtureForCategory(cat);
+            await window.persistData();
+
+            if (showAlert) alert(`¡Fixture de ${cat} actualizado con éxito!`);
+        }
+
+        function openManagePairsModal() {
+            const cat = window.appState.selectedCategory;
+            document.getElementById('modal-pair-cat-title').innerText = cat;
+            renderModalPairsList();
+            document.getElementById('modal-manage-pairs').classList.remove('hidden');
+        }
+
+        function renderModalPairsList() {
+            const cat = window.appState.selectedCategory;
+            const pairs = window.appState.pairs[cat] || [];
+            document.getElementById('count-pairs-cat').innerText = pairs.length;
+
+            const list = document.getElementById('modal-pairs-list');
+            if (pairs.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-500 py-2 text-center">Aún no agregaste parejas a esta categoría.</p>`;
+                return;
+            }
+
+            list.innerHTML = pairs.map((p, idx) => `
+                <div class="bg-navy-800 border border-navy-700 p-2.5 rounded-lg flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-500">#${idx+1}</span>
+                        <span class="font-bold text-white">${p.j1} / ${p.j2}</span>
+                    </div>
+                    <button onclick="deletePairFromCat('${p.id}')" class="text-rose-400 hover:text-rose-300 font-bold px-2 py-1 bg-rose-500/10 rounded border border-rose-500/20">
+                        Eliminar
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function saveNewPair() {
+            if (!window.appState.isAdmin) {
+                alert("Necesitás ingresar como administrador.");
+                return;
+            }
+
+            const cat = window.appState.selectedCategory;
+            const j1El = document.getElementById('input-j1-name');
+            const j2El = document.getElementById('input-j2-name');
+            const photoEl = document.getElementById('input-pair-photo');
+            const phoneEl = document.getElementById('input-pair-phone');
+
+            const j1 = j1El ? j1El.value.trim() : '';
+            const j2 = j2El ? j2El.value.trim() : '';
+            const photo = photoEl ? photoEl.value.trim() : '';
+            const phone = phoneEl ? phoneEl.value.trim() : '';
+
+            if (!j1 || !j2) {
+                alert("Ingresá el nombre de ambos jugadores.");
+                return;
+            }
+
+            if (!window.appState.pairs[cat]) window.appState.pairs[cat] = [];
+
+            const pairId = 'pair_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+            window.appState.pairs[cat].push({
+                id: pairId,
+                j1, j2, photo, phone
+            });
+
+            renderModalPairsList();
+            renderFixtureForCategory(cat);
+
+            if (j1El) j1El.value = '';
+            if (j2El) j2El.value = '';
+            if (photoEl) photoEl.value = '';
+            if (phoneEl) phoneEl.value = '';
+
+            await generateFEPFixtureLogic(cat, false, false);
+            renderModalPairsList();
+        }
+
+        async function deletePairFromCat(pairId) {
+            if (!window.appState.isAdmin) {
+                alert("Necesitás ingresar como administrador.");
+                return;
+            }
+
+            const cat = window.appState.selectedCategory;
+            const before = window.appState.pairs[cat] || [];
+            window.appState.pairs[cat] = before.filter(p => p.id !== pairId);
+
+            renderModalPairsList();
+            renderFixtureForCategory(cat);
+            await generateFEPFixtureLogic(cat, false, false);
+            renderModalPairsList();
+        }
+
+        function openEditMatchModal(matchId) {
+            const cat = window.appState.selectedCategory;
+            const match = window.appState.matches[cat].find(m => m.id === matchId);
+            if (!match) return;
+
+            document.getElementById('edit-match-id').value = match.id;
+            document.getElementById('modal-match-phase').innerText = `${match.cat} - ${match.zone}`;
+            document.getElementById('match-team1-label').innerText = match.t1;
+            document.getElementById('match-team2-label').innerText = match.t2;
+
+            document.getElementById('p1-set1').value = '';
+            document.getElementById('p1-set2').value = '';
+            document.getElementById('p1-set3').value = '';
+            document.getElementById('p2-set1').value = '';
+            document.getElementById('p2-set2').value = '';
+            document.getElementById('p2-set3').value = '';
+
+            if (match.score1) {
+                const s1 = match.score1.split(' ');
+                if (s1[0]) document.getElementById('p1-set1').value = s1[0];
+                if (s1[1]) document.getElementById('p1-set2').value = s1[1];
+                if (s1[2]) document.getElementById('p1-set3').value = s1[2];
+            }
+
+            if (match.score2) {
+                const s2 = match.score2.split(' ');
+                if (s2[0]) document.getElementById('p2-set1').value = s2[0];
+                if (s2[1]) document.getElementById('p2-set2').value = s2[1];
+                if (s2[2]) document.getElementById('p2-set3').value = s2[2];
+            }
+
+            if (match.court) {
+                document.getElementById('select-match-court').value = match.court;
+            }
+
+            document.getElementById('input-match-status').value = match.status || 'Programado';
+
+            document.getElementById('modal-edit-match').classList.remove('hidden');
+        }
+
+        function saveMatchDetails() {
+            const cat = window.appState.selectedCategory;
+            const matchId = document.getElementById('edit-match-id').value;
+            const matchesList = window.appState.matches[cat];
+            const match = matchesList.find(m => m.id === matchId);
+
+            if (match) {
+                const p1Set1 = document.getElementById('p1-set1').value.trim();
+                const p1Set2 = document.getElementById('p1-set2').value.trim();
+                const p1Set3 = document.getElementById('p1-set3').value.trim();
+
+                const p2Set1 = document.getElementById('p2-set1').value.trim();
+                const p2Set2 = document.getElementById('p2-set2').value.trim();
+                const p2Set3 = document.getElementById('p2-set3').value.trim();
+
+                const s1Array = [p1Set1, p1Set2, p1Set3].filter(x => x !== '');
+                const s2Array = [p2Set1, p2Set2, p2Set3].filter(x => x !== '');
+
+                const s1 = s1Array.join(' ');
+                const s2 = s2Array.join(' ');
+
+                const status = document.getElementById('input-match-status').value;
+                const day = document.getElementById('select-match-day').value;
+                const time = document.getElementById('select-match-time').value;
+                const court = document.getElementById('select-match-court').value;
+
+                match.score1 = s1;
+                match.score2 = s2;
+                match.datetime = `${day} - ${time}`;
+                match.court = court;
+                match.status = status;
+
+                if (status === 'Finalizado' && s1 && s2) {
+                    const winT1 = isWinner(s1, s2);
+                    const winner = winT1 ? match.t1 : match.t2;
+                    const loser = winT1 ? match.t2 : match.t1;
+
+                    if (match.code) {
+                        const code = match.code;
+                        matchesList.forEach(m => {
+                            if (m.t1.includes(`(${code}1)`)) m.t1 = winner;
+                            if (m.t2.includes(`(${code}1)`)) m.t1 = winner;
+                            if (m.t1.includes(`(${code}2)`)) m.t1 = loser;
+                            if (m.t2.includes(`(${code}2)`)) m.t2 = loser;
+                        });
+                    } else if (match.zone) {
+                        const matchZoneName = match.zone;
+                        matchesList.forEach(m => {
+                            if (m.t1.includes(`Ganador ${matchZoneName}`)) m.t1 = winner;
+                            if (m.t2.includes(`Ganador ${matchZoneName}`)) m.t2 = winner;
+                        });
+                    }
+                }
+
+                renderFixtureForCategory(cat);
+                window.persistData();
+                closeModal('modal-edit-match');
+            }
+        }
+
+        function closeModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (el) el.classList.add('hidden');
+        }
+
+        function populateTimesDropdown() {
+            const select = document.getElementById('select-match-time');
+            if (!select) return;
+            let timesHTML = '';
+            for (let h = 8; h <= 23; h++) {
+                const hourStr = h < 10 ? `0${h}` : `${h}`;
+                timesHTML += `<option value="${hourStr}:00 hs">${hourStr}:00 hs</option>`;
+                timesHTML += `<option value="${hourStr}:30 hs">${hourStr}:30 hs</option>`;
+            }
+            select.innerHTML = timesHTML;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            populateTimesDropdown();
+            renderHomeCategoriesGrids();
+            renderCategoryDropdowns();
+            renderInicioNews();
+            renderNews();
+            renderFixtureForCategory(window.appState.selectedCategory);
+        });
+    </script>
+</body>
+</html>
