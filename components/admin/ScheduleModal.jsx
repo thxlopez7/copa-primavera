@@ -5,18 +5,24 @@ import { updateMatchSchedule } from "@/lib/actions/match.actions";
 
 export default function ScheduleModal({ match, onClose }) {
   // Inicializamos con los datos actuales
-  // Format datetime-local requires YYYY-MM-DDThh:mm
   const formatForInput = (isoString) => {
-    if (!isoString || isoString === "A definir" || isoString === "Automático") return "";
+    if (!isoString || isoString === "A definir" || isoString === "Automático") return { date: "", time: "" };
     try {
-      // Intentamos parsear si es ISO
-      return new Date(isoString).toISOString().slice(0, 16);
+      const d = new Date(isoString);
+      const tzOffset = d.getTimezoneOffset() * 60000; // offset in milliseconds
+      const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16);
+      return {
+        date: localISOTime.split("T")[0],
+        time: localISOTime.split("T")[1]
+      };
     } catch {
-      return "";
+      return { date: "", time: "" };
     }
   };
 
-  const [scheduledAt, setScheduledAt] = useState(formatForInput(match.scheduled_at || match.match_datetime));
+  const initialDateTime = formatForInput(match.scheduled_at || match.match_datetime);
+  const [date, setDate] = useState(initialDateTime.date);
+  const [time, setTime] = useState(initialDateTime.time);
   const [court, setCourt] = useState(match.court || "");
   const [loading, setLoading] = useState(false);
 
@@ -24,6 +30,7 @@ export default function ScheduleModal({ match, onClose }) {
     e.preventDefault();
     setLoading(true);
 
+    const scheduledAt = date && time ? `${date}T${time}` : null;
     const res = await updateMatchSchedule(match.id, scheduledAt, court);
     if (res.success) {
       onClose(); // Cierra el modal exitosamente
@@ -52,31 +59,41 @@ export default function ScheduleModal({ match, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Fecha y Hora</label>
-            <input 
-              type="datetime-local" 
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              disabled={loading}
-              className="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition-colors"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Fecha</label>
+              <input 
+                type="date" 
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                disabled={loading}
+                className="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition-colors"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Hora</label>
+              <input 
+                type="time" 
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                disabled={loading}
+                className="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition-colors"
+                required
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cancha</label>
-            <select
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Lugar / Cancha</label>
+            <input
+              type="text"
               value={court}
               onChange={(e) => setCourt(e.target.value)}
               disabled={loading}
+              placeholder="Ej: Cancha 1"
               className="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition-colors"
-            >
-              <option value="">A definir</option>
-              <option value="Cancha 1 (Central)">Cancha 1 (Central)</option>
-              <option value="Cancha 2">Cancha 2</option>
-              <option value="Cancha 3">Cancha 3</option>
-            </select>
+            />
           </div>
 
           <div className="pt-4 flex gap-3">

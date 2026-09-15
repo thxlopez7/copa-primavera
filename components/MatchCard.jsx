@@ -14,6 +14,20 @@ export default function MatchCard({ match }) {
     team2 = null
   } = match;
 
+  const formatRoundName = (rName) => {
+    if (!rName) return "Ronda";
+    if (rName.includes("FINAL")) return "Final";
+    if (rName.includes("SF")) return "Semifinal";
+    if (rName.includes("QF")) return "Cuartos de Final";
+    if (rName.includes("R16")) return "Octavos de Final";
+    if (rName.includes("R32")) return "Dieciseisavos";
+    return rName;
+  };
+
+  const formattedDate = scheduled_at && scheduled_at !== 'A definir' && scheduled_at !== 'Automático'
+    ? new Date(scheduled_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : 'A definir';
+
   // Renderizadores de Equipo
   const renderTeamName = (team) => {
     if (!team) return <span className="text-slate-500 italic text-sm">Por definir</span>;
@@ -45,7 +59,7 @@ export default function MatchCard({ match }) {
             {category_name}
           </span>
           <span className="text-xs text-slate-400 font-medium">
-            {round_name}
+            {formatRoundName(round_name)}
           </span>
         </div>
         <div>
@@ -127,7 +141,7 @@ export default function MatchCard({ match }) {
       <div className="bg-navy-950/30 px-4 py-2 border-t border-navy-800 flex justify-between items-center text-[10px] text-slate-400 font-medium">
         <div className="flex items-center gap-1.5">
           <i className="fa-regular fa-calendar"></i>
-          {scheduled_at || "A definir"}
+          {formattedDate}
         </div>
         <div className="flex items-center gap-1.5">
           <i className="fa-solid fa-location-dot"></i>
