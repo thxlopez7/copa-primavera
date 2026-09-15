@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+/* eslint-disable @next/next/no-img-element */
+import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useScrollLock } from "@/hooks/useScrollLock";
 

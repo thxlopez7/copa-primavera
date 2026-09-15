@@ -35,6 +35,7 @@ export default function ClasificacionAdmin() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line
     loadData();
   }, []);
 

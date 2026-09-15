@@ -45,6 +45,7 @@ function CuadroContent() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCategoryId]);

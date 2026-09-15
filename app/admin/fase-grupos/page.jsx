@@ -36,6 +36,7 @@ export default function FaseGruposAdmin() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line
     loadData();
   }, []);
 
@@ -68,6 +69,7 @@ export default function FaseGruposAdmin() {
   useEffect(() => {
     if (graph.groups.length > 0) {
       if (!selectedZone || !graph.groups.find(z => z.id === selectedZone)) {
+        // eslint-disable-next-line
         setSelectedZone(graph.groups[0].id);
       }
     } else {

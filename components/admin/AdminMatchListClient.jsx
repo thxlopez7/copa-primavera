@@ -8,30 +8,21 @@ export default function AdminMatchListClient({ initialCategories, initialPairs, 
   const router = useRouter();
   const searchParams = useSearchParams();
   const autoMatchId = searchParams.get('match');
+  const autoMatch = initialMatches?.find(x => x.id === autoMatchId);
 
   const [selectedCategory, setSelectedCategory] = useState(
-    initialCategories && initialCategories.length > 0 ? initialCategories[0].id : ""
+    autoMatch ? autoMatch.category_id : (initialCategories && initialCategories.length > 0 ? initialCategories[0].id : "")
   );
   const [filterState, setFilterState] = useState("Programado"); // Programado, Finalizado, ALL
   
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const matchWithTeams = autoMatch ? {
+    ...autoMatch,
+    team1: initialPairs.find(p => p.id === autoMatch.team1_id) || null,
+    team2: initialPairs.find(p => p.id === autoMatch.team2_id) || null
+  } : null;
 
-  useEffect(() => {
-    if (autoMatchId && initialMatches) {
-      const m = initialMatches.find(x => x.id === autoMatchId);
-      if (m) {
-        setSelectedCategory(m.category_id);
-        const matchWithTeams = {
-          ...m,
-          team1: initialPairs.find(p => p.id === m.team1_id) || null,
-          team2: initialPairs.find(p => p.id === m.team2_id) || null
-        };
-        setSelectedMatch(matchWithTeams);
-        setIsModalOpen(true);
-      }
-    }
-  }, [autoMatchId, initialMatches, initialPairs]);
+  const [selectedMatch, setSelectedMatch] = useState(matchWithTeams);
+  const [isModalOpen, setIsModalOpen] = useState(!!autoMatch);
 
   const categoryMatches = (initialMatches || []).filter(m => m !== null && m.category_id === selectedCategory);
   

@@ -4,16 +4,15 @@ import React, { useState } from "react";
 import { updateMatchResult } from "@/lib/actions/match.actions";
 
 export default function ResultModal({ match, onClose, onSuccess }) {
-  if (!match) return null;
-  // Inicializamos el estado para 3 sets
   const [sets, setSets] = useState([
     { team1_score: "", team2_score: "" },
     { team1_score: "", team2_score: "" },
     { team1_score: "", team2_score: "" },
   ]);
-  
   const [isWalkover, setIsWalkover] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  if (!match) return null;
 
   const getTeamName = (teamObj) => {
     if (!teamObj) return "Por definir";

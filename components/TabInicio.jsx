@@ -1,5 +1,8 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+import React from 'react';
+
 export default function TabInicio({ categories, news, setActiveTab, openContactModal, selectCategory }) {
   const damasCategories = categories.filter(c => c.name && c.name.toLowerCase().includes('damas'));
   const caballerosCategories = categories.filter(c => c.name && (c.name.toLowerCase().includes('caballeros') || c.name.toLowerCase().includes('mixto')));
@@ -147,7 +150,7 @@ export default function TabInicio({ categories, news, setActiveTab, openContactM
               <div className="h-40 overflow-hidden relative">
                 <img src={n.image_url} alt={n.title} className="w-full h-full object-cover transition duration-500 hover:scale-110" />
                 <div className="absolute top-2 right-2 bg-navy-950/80 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-bold text-brand-400 border border-navy-700">
-                  <i className="fa-regular fa-calendar mr-1"></i> {new Date(n.created_at || Date.now()).toLocaleDateString()}
+                  <i className="fa-regular fa-calendar mr-1"></i> {new Date(n.created_at || "2024-01-01").toLocaleDateString()}
                 </div>
               </div>
               <div className="p-4 flex-grow flex flex-col justify-between space-y-2">

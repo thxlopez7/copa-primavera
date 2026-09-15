@@ -22,7 +22,7 @@ export default function TabFixture({
 
   const activeCatObj = categories.find(c => c.id === selectedCategory);
   const categoryMatches = matches.filter(m => m.category_id === selectedCategory);
-  const categoryPairs = pairs[selectedCategory] || [];
+  const categoryPairs = useMemo(() => pairs[selectedCategory] || [], [pairs, selectedCategory]);
   
   // Hidratamos el grafo
   const graph = useMemo(() => TournamentBuilder.buildGraph(categoryMatches), [categoryMatches]);
