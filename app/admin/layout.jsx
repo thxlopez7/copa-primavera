@@ -1,5 +1,4 @@
 import Link from "next/link";
-import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import LogoutButton from "@/components/admin/LogoutButton";
 
 export const revalidate = 0;
@@ -7,8 +6,7 @@ export const revalidate = 0;
 export default async function AdminLayout({ children }) {
 
   return (
-    <AdminAuthGuard>
-      <div className="flex min-h-screen bg-navy-950 text-slate-300 font-sans">
+    <div className="flex min-h-screen bg-navy-950 text-slate-300 font-sans">
       
       {/* Sidebar Desktop (Oculto en mobile muy pequeños, apilable en tablets) */}
       <aside className="w-64 bg-navy-900 border-r border-navy-800 hidden md:flex flex-col">
@@ -61,7 +59,6 @@ export default async function AdminLayout({ children }) {
         </div>
       </main>
       
-      </div>
-    </AdminAuthGuard>
+    </div>
   );
 }
