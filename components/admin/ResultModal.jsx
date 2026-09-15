@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { MatchEngine } from "@/lib/domain/MatchEngine";
 
-export default function EditMatchModal({ isOpen, onClose, match, isAdmin, onSuccess }) {
+export default function ResultModal({ isOpen, onClose, match, isAdmin, onSuccess }) {
   const [sets, setSets] = useState([
     { t1: "", t2: "" },
     { t1: "", t2: "" },

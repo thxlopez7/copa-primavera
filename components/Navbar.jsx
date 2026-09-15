@@ -43,15 +43,27 @@ export default function Navbar({ activeTab, setActiveTab, isAdmin, openContactMo
             <button onClick={openContactModal} className="bg-brand-500 hover:bg-brand-600 text-navy-950 font-bold px-4 py-2.5 rounded-xl text-sm transition flex items-center gap-2 shadow-lg shadow-brand-500/20">
               <i className="fa-brands fa-whatsapp text-base"></i> Inscribirse
             </button>
-            <button onClick={openAdminModal} className="bg-navy-800 hover:bg-navy-700 text-slate-300 hover:text-white px-3 py-2 rounded-xl border border-navy-700 text-xs transition flex items-center gap-1.5 font-bold" title="Panel Administrador">
-              <i className="fa-solid fa-lock text-[10px]"></i> <span>{isAdmin ? 'Panel Admin' : 'Admin'}</span>
-            </button>
+            {isAdmin ? (
+              <a href="/admin" className="bg-navy-800 hover:bg-brand-500 hover:text-navy-950 text-brand-400 px-4 py-2 rounded-xl border border-navy-700 hover:border-brand-500 text-xs transition flex items-center gap-1.5 font-bold shadow-sm" title="Ir al Tournament Operations Center">
+                <i className="fa-solid fa-gauge-high"></i> <span>Operations Center</span>
+              </a>
+            ) : (
+              <button onClick={openAdminModal} className="bg-navy-800 hover:bg-navy-700 text-slate-300 hover:text-white px-3 py-2 rounded-xl border border-navy-700 text-xs transition flex items-center gap-1.5 font-bold" title="Ingreso Administrador">
+                <i className="fa-solid fa-lock text-[10px]"></i> <span>Admin</span>
+              </button>
+            )}
           </div>
 
           <div className="md:hidden flex items-center gap-2">
-            <button onClick={openAdminModal} className="bg-navy-800 text-slate-300 p-2 rounded-lg text-xs border border-navy-700 font-bold">
-              <i className="fa-solid fa-lock mr-1"></i> Admin
-            </button>
+            {isAdmin ? (
+              <a href="/admin" className="bg-brand-500/10 text-brand-400 p-2 rounded-lg text-xs border border-brand-500/20 font-bold">
+                <i className="fa-solid fa-gauge-high"></i>
+              </a>
+            ) : (
+              <button onClick={openAdminModal} className="bg-navy-800 text-slate-300 p-2 rounded-lg text-xs border border-navy-700 font-bold">
+                <i className="fa-solid fa-lock mr-1"></i> Admin
+              </button>
+            )}
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-300 hover:text-white p-2">
               <i className={`fa-solid ${isMobileMenuOpen ? 'fa-xmark' : 'fa-bars'} text-xl`}></i>
             </button>
