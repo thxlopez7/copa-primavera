@@ -1,296 +1,172 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { useScrollLock } from "@/hooks/useScrollLock";
-import { MatchEngine } from "@/lib/domain/MatchEngine";
+import React, { useState } from "react";
+import { updateMatchResult } from "@/lib/actions/match.actions";
 
-export default function ResultModal({ isOpen, onClose, match, isAdmin, onSuccess }) {
+export default function ResultModal({ match, onClose, onSuccess }) {
+  if (!match) return null;
+  // Inicializamos el estado para 3 sets
   const [sets, setSets] = useState([
-    { t1: "", t2: "" },
-    { t1: "", t2: "" },
-    { t1: "", t2: "" }
+    { team1_score: "", team2_score: "" },
+    { team1_score: "", team2_score: "" },
+    { team1_score: "", team2_score: "" },
   ]);
-  const [isWO, setIsWO] = useState(false);
-  const [winnerWO, setWinnerWO] = useState(null); // 1 o 2
   
-  const [status, setStatus] = useState("Programado");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // States for confirmation step
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [tempFinalScore1, setTempFinalScore1] = useState("");
-  const [tempFinalScore2, setTempFinalScore2] = useState("");
-  const [tempWinnerId, setTempWinnerId] = useState(null);
-  const [hasDescendants, setHasDescendants] = useState(false);
+  const [isWalkover, setIsWalkover] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  useScrollLock(isOpen);
-
-  useEffect(() => {
-    if (match) {
-      // Reset defaults
-      setSets([{ t1: "", t2: "" }, { t1: "", t2: "" }, { t1: "", t2: "" }]);
-      setIsWO(false);
-      setWinnerWO(null);
-      setShowConfirm(false);
-      setHasDescendants(false);
-
-      // Parse existing score
-      if (match.score_team1 === "W.O." || match.score_team2 === "W.O.") {
-        setIsWO(true);
-        setWinnerWO(match.score_team1 === "W.O." ? 1 : 2);
-      } else if (match.score_team1) {
-        const parsedSets = [{ t1: "", t2: "" }, { t1: "", t2: "" }, { t1: "", t2: "" }];
-        const parts = match.score_team1.split(' ');
-        parts.forEach((part, i) => {
-          if (i < 3) {
-            const scores = part.split('-');
-            if (scores.length >= 2) {
-              parsedSets[i].t1 = scores[0];
-              parsedSets[i].t2 = scores[1];
-            }
-          }
-        });
-        setSets(parsedSets);
-      }
-      
-      setStatus(match.status || "Programado");
-
-      // Verificar si ya tiene descendientes que hayan avanzado
-      if (match.next_match_id && match.status === "Finalizado") {
-        supabase.from('matches').select('*').eq('id', match.next_match_id).single()
-          .then(({ data }) => {
-            if (data && (data.status === "Finalizado" || data.score_team1)) {
-              setHasDescendants(true);
-            }
-          });
-      }
+  const getTeamName = (teamObj) => {
+    if (!teamObj) return "Por definir";
+    if (teamObj?.player1 || teamObj?.player2) {
+      return `${teamObj.player1?.last_name || 'J1'} / ${teamObj.player2?.last_name || 'J2'}`;
     }
-  }, [match]);
+    return teamObj.name || "Equipo";
+  };
 
-  if (!isOpen || !match) return null;
+  const t1Name = getTeamName(match?.team1);
+  const t2Name = getTeamName(match?.team2);
 
-  const updateSet = (index, team, value) => {
-    if (value !== "" && !/^\d+$/.test(value)) return;
-    if (value.length > 2) return;
+  const handleScoreChange = (setIndex, field, value) => {
     const newSets = [...sets];
-    newSets[index][team] = value;
+    // Permitir vacío para borrar, si no parsear a entero
+    newSets[setIndex][field] = value === "" ? "" : parseInt(value) || 0;
     setSets(newSets);
   };
 
-  const handleSetWO = (winner) => {
-    setIsWO(true);
-    setWinnerWO(winner);
-    setStatus("Finalizado");
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const clearWO = () => {
-    setIsWO(false);
-    setWinnerWO(null);
-  };
+    // Filtramos los sets que realmente se jugaron (ambos scores numéricos)
+    const playedSets = sets.filter(
+      s => typeof s.team1_score === 'number' && typeof s.team2_score === 'number'
+    );
 
-  const handleInitialSave = () => {
-    if (!isAdmin) {
-      alert("Necesitás ingresar como administrador.");
-      return;
-    }
+    // Armamos el JSONB requerido por el motor de dominio
+    const resultJson = {
+      sets: playedSets,
+      winner_id: null, // El backend lo calculará
+      is_walkover: isWalkover
+    };
 
-    let finalScore1 = "";
-    let finalScore2 = "";
-
-    if (isWO) {
-      finalScore1 = winnerWO === 1 ? "W.O." : "-";
-      finalScore2 = winnerWO === 2 ? "W.O." : "-";
-    } else {
-      const validSets = sets.filter(s => s.t1 !== "" && s.t2 !== "");
-      finalScore1 = validSets.map(s => `${s.t1}-${s.t2}`).join(' ');
-      finalScore2 = validSets.map(s => `${s.t2}-${s.t1}`).join(' ');
-    }
-
-    setTempFinalScore1(finalScore1);
-    setTempFinalScore2(finalScore2);
-
-    if (status === "Finalizado" || hasDescendants) {
-      const winnerId = MatchEngine.determineWinner(match, finalScore1, finalScore2);
-      setTempWinnerId(winnerId);
-      setShowConfirm(true);
-    } else {
-      executeSave(finalScore1, finalScore2, null);
-    }
-  };
-
-  const executeSave = async (f1, f2, winnerId) => {
-    setIsSubmitting(true);
-    try {
-      // Usamos match_datetime y court que ya estén, ya no se editan aquí, sino en TabProgramacion
-      const { error } = await supabase
-        .from('matches')
-        .update({
-          score_team1: f1 || null,
-          score_team2: f2 || null,
-          status: status
-        })
-        .eq('id', match.id);
-
-      if (error) {
-        console.error("Error DB:", error.message, error.details);
-        alert("Error DB: " + error.message);
-        throw error;
-      }
-
-      // Propagación Dominio DAG
-      if (match.round.startsWith("KO_")) {
-        if (status === "Finalizado") {
-          if (winnerId) {
-            await MatchEngine.propagateForward(match, winnerId);
-          }
-        } else {
-          await MatchEngine.revertPropagation(match);
-        }
-      }
-
-      if (onSuccess) {
-        await onSuccess();
-      }
+    const res = await updateMatchResult(match?.id, resultJson);
+    
+    if (res.success) {
       onClose();
-    } catch (error) {
-      console.error("Error al actualizar partido:", error);
-    } finally {
-      setIsSubmitting(false);
+      if (onSuccess) onSuccess();
+    } else {
+      alert("Error al guardar resultado: " + res.error);
     }
+    setLoading(false);
   };
-
-  const team1Name = match.team1 ? `${match.team1.player1_name} / ${match.team1.player2_name}` : `A definir (1)`;
-  const team2Name = match.team2 ? `${match.team2.player1_name} / ${match.team2.player2_name}` : `A definir (2)`;
-
-  let tempWinnerName = "Nadie";
-  if (tempWinnerId === match.team1_id) tempWinnerName = team1Name;
-  if (tempWinnerId === match.team2_id) tempWinnerName = team2Name;
 
   return (
-    <div className="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl max-h-[95vh] overflow-y-auto">
-        
-        {!showConfirm ? (
-          <>
-            <div>
-              <span className="text-brand-500 text-[10px] font-bold uppercase block">{match.round}</span>
-              <h3 className="text-lg font-bold text-white">Cargar Resultado</h3>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-sm animate-fade-in-up">
+      <div className="bg-navy-900 border border-navy-700 rounded-3xl p-6 md:p-8 max-w-xl w-full shadow-2xl relative">
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-navy-800 hover:bg-navy-700 text-slate-400 hover:text-white transition-colors"
+        >
+          <i className="fa-solid fa-xmark"></i>
+        </button>
 
-            <div className="space-y-4">
-              {/* GRILLA DE SETS INTUITIVA */}
-              <div className="bg-navy-900 border border-navy-700 rounded-xl p-3">
-                {!isWO && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-[1fr_40px_40px_40px] gap-2 items-center mb-1 text-center">
-                      <div></div>
-                      <span className="text-[10px] font-bold text-slate-400">S1</span>
-                      <span className="text-[10px] font-bold text-slate-400">S2</span>
-                      <span className="text-[10px] font-bold text-slate-400">S3</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-[1fr_40px_40px_40px] gap-2 items-center">
-                      <span className="font-bold text-xs text-white truncate pr-2">{team1Name}</span>
-                      {sets.map((s, i) => (
-                        <input key={`t1-${i}`} type="text" value={s.t1} onChange={e => updateSet(i, 't1', e.target.value)}
-                          className="w-full bg-navy-800 border border-navy-700 rounded-md py-1.5 text-center text-white font-mono font-bold text-xs outline-none focus:border-brand-500" />
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-[1fr_40px_40px_40px] gap-2 items-center">
-                      <span className="font-bold text-xs text-white truncate pr-2">{team2Name}</span>
-                      {sets.map((s, i) => (
-                        <input key={`t2-${i}`} type="text" value={s.t2} onChange={e => updateSet(i, 't2', e.target.value)}
-                          className="w-full bg-navy-800 border border-navy-700 rounded-md py-1.5 text-center text-white font-mono font-bold text-xs outline-none focus:border-brand-500" />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {isWO && (
-                  <div className="text-center py-6 border border-dashed border-brand-500/50 rounded-lg bg-brand-500/5">
-                    <h4 className="text-brand-500 font-bold mb-1"><i className="fa-solid fa-trophy mr-1"></i> Partido resuelto por W.O.</h4>
-                    <p className="text-xs text-white">Ganador: <strong className="text-brand-400">{winnerWO === 1 ? team1Name : team2Name}</strong></p>
-                    <button onClick={clearWO} className="mt-3 text-[10px] text-slate-400 hover:text-white underline">Restablecer a carga por sets</button>
-                  </div>
-                )}
-                
-                {!isWO && (
-                  <div className="mt-4 pt-3 border-t border-navy-800 grid grid-cols-2 gap-2">
-                    <button onClick={() => handleSetWO(1)} className="text-[9px] font-bold text-orange-400 border border-dashed border-orange-400/30 rounded py-1 hover:bg-orange-400/10 transition-colors">
-                      Ganó W.O. (Eq 1)
-                    </button>
-                    <button onClick={() => handleSetWO(2)} className="text-[9px] font-bold text-orange-400 border border-dashed border-orange-400/30 rounded py-1 hover:bg-orange-400/10 transition-colors">
-                      Ganó W.O. (Eq 2)
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-xs">
-                <label className="text-[10px] text-slate-400 block mb-0.5">Estado del Partido:</label>
-                <select 
-                  value={status} 
-                  onChange={e => setStatus(e.target.value)}
-                  className="w-full bg-navy-800 border border-navy-700 rounded-lg px-2.5 py-1.5 text-white font-semibold"
-                >
-                  <option value="Programado">Programado</option>
-                  <option value="En Juego">En Juego</option>
-                  <option value="Finalizado">Finalizado</option>
-                </select>
-              </div>
-
-              <div className="pt-2 space-y-2">
-                <button 
-                  onClick={handleInitialSave} 
-                  disabled={isSubmitting}
-                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-500/50 text-navy-950 font-bold py-2.5 rounded-xl text-xs transition shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                >
-                  Guardar Resultado
-                </button>
-                <button onClick={onClose} disabled={isSubmitting} className="w-full bg-transparent text-slate-400 hover:text-white py-1 text-xs">
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="space-y-4 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Confirmar Resultado</h3>
-            
-            <div className="bg-navy-900 border border-navy-700 rounded-xl p-4">
-              <p className="text-xs text-slate-400 mb-1">El ganador del encuentro es:</p>
-              <p className="text-lg font-bold text-brand-400">{tempWinnerName}</p>
-              
-              {status === "Finalizado" && match.round.startsWith("KO_") && (
-                <p className="text-xs text-brand-500 mt-2 border-t border-navy-700 pt-2">
-                  <i className="fa-solid fa-arrow-right mr-1"></i> Avanzará automáticamente a la siguiente ronda.
-                </p>
-              )}
-            </div>
-
-            {hasDescendants && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-left">
-                <p className="text-xs font-bold text-red-400 mb-1"><i className="fa-solid fa-triangle-exclamation mr-1"></i> ¡Cuidado! Reversión Profunda</p>
-                <p className="text-[10px] text-slate-300">Este partido ya afecta rondas posteriores (Cuartos, Semis o Final). Modificar el resultado causará que los participantes futuros de esa rama sean eliminados y deban reconstruirse. ¿Deseas continuar?</p>
-              </div>
-            )}
-
-            <div className="pt-4 space-y-2">
-              <button 
-                onClick={() => executeSave(tempFinalScore1, tempFinalScore2, tempWinnerId)} 
-                disabled={isSubmitting}
-                className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-500/50 text-navy-950 font-bold py-2.5 rounded-xl text-xs transition shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-              >
-                {isSubmitting ? "Guardando..." : "Confirmar y Propagar"}
-              </button>
-              <button onClick={() => setShowConfirm(false)} disabled={isSubmitting} className="w-full bg-transparent text-slate-400 hover:text-white py-1 text-xs">
-                Atrás
-              </button>
-            </div>
+        <div className="mb-8">
+          <div className="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-xl mb-4">
+            <i className="fa-solid fa-table-tennis-paddle-ball"></i>
           </div>
-        )}
+          <h3 className="text-2xl font-black text-white">Cargar Resultado</h3>
+          <p className="text-slate-400 text-sm mt-1">
+            Ingresa los games por set. El sistema calculará automáticamente al ganador y lo avanzará si es necesario.
+          </p>
+        </div>
 
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* Cabecera del Marcador */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <div>Equipos</div>
+            <div className="w-12 text-center">S1</div>
+            <div className="w-12 text-center">S2</div>
+            <div className="w-12 text-center">S3</div>
+          </div>
+
+          {/* Fila Equipo 1 */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
+            <div className="bg-navy-950 px-4 py-3 rounded-xl border border-navy-800 font-bold text-white truncate">
+              {t1Name}
+            </div>
+            {[0, 1, 2].map(idx => (
+              <input
+                key={`t1-s${idx}`}
+                type="number"
+                min="0"
+                max="7"
+                value={sets[idx].team1_score}
+                onChange={(e) => handleScoreChange(idx, 'team1_score', e.target.value)}
+                disabled={loading || isWalkover}
+                className="w-12 h-12 bg-navy-950 border border-navy-700 rounded-xl text-center text-white font-bold focus:outline-none focus:border-brand-500 transition-colors disabled:opacity-50"
+              />
+            ))}
+          </div>
+
+          {/* Fila Equipo 2 */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
+            <div className="bg-navy-950 px-4 py-3 rounded-xl border border-navy-800 font-bold text-white truncate">
+              {t2Name}
+            </div>
+            {[0, 1, 2].map(idx => (
+              <input
+                key={`t2-s${idx}`}
+                type="number"
+                min="0"
+                max="7"
+                value={sets[idx].team2_score}
+                onChange={(e) => handleScoreChange(idx, 'team2_score', e.target.value)}
+                disabled={loading || isWalkover}
+                className="w-12 h-12 bg-navy-950 border border-navy-700 rounded-xl text-center text-white font-bold focus:outline-none focus:border-brand-500 transition-colors disabled:opacity-50"
+              />
+            ))}
+          </div>
+
+          {/* Walkover */}
+          <div className="pt-4 border-t border-navy-800">
+            <label className="flex items-center gap-3 cursor-pointer group w-fit">
+              <input
+                type="checkbox"
+                checked={isWalkover}
+                onChange={(e) => setIsWalkover(e.target.checked)}
+                className="w-5 h-5 accent-red-500 rounded bg-navy-800 border-navy-700"
+              />
+              <span className="text-slate-300 font-medium group-hover:text-white transition-colors">
+                Marcar como Walkover (W.O.)
+              </span>
+            </label>
+            {isWalkover && (
+              <p className="text-xs text-orange-400 mt-2">
+                En modo W.O. el sistema avanzará a uno de los equipos asumiendo que el otro no se presentó. 
+                Deberás asignar un 6-0 6-0 manualmente al ganador si deseas que figure así en las estadísticas.
+              </p>
+            )}
+          </div>
+
+          {/* Acciones */}
+          <div className="pt-4 flex gap-3">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl font-bold text-slate-400 hover:bg-navy-800 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="flex-1 bg-brand-500 hover:bg-brand-400 text-navy-950 font-black py-3 rounded-xl transition-colors disabled:opacity-50 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+            >
+              {loading ? <i className="fa-solid fa-spinner animate-spin"></i> : "Guardar y Procesar"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

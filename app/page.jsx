@@ -1,248 +1,192 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import MatchCard from "@/components/MatchCard";
+import ScheduleRow from "@/components/ScheduleRow";
+import CategorySelector from "@/components/CategorySelector";
+import Link from "next/link";
 
-import Navbar from "@/components/Navbar";
-import AdminBanner from "@/components/AdminBanner";
-import Footer from "@/components/Footer";
-import TabInicio from "@/components/TabInicio";
-import TabNoticias from "@/components/TabNoticias";
-import TabFixture from "@/components/TabFixture";
-import TabProgramacion from "@/components/TabProgramacion";
+export const revalidate = 0; // Garantizar frescura de datos en el home
 
-import ContactModal from "@/components/Modals/ContactModal";
-import AdminLoginModal from "@/components/Modals/AdminLoginModal";
-import MatchDetailModal from "@/components/Modals/MatchDetailModal";
-import ManageCategoriesModal from "@/components/Modals/ManageCategoriesModal";
-import ManagePairsModal from "@/components/Modals/ManagePairsModal";
-import EditMatchModal from "@/components/Modals/EditMatchModal";
-import NewsModal from "@/components/Modals/NewsModal";
+export default async function HomePage() {
+  // 1. Fetching concurrente de datos (pantallazos rápidos para el dashboard)
+  const [
+    { data: liveRaw },
+    { data: upcomingRaw },
+    { data: latestRaw },
+    { data: categories }
+  ] = await Promise.all([
+    // A) En Vivo
+    supabase.from('matches')
+      .select('*, category:categories(name), team1:team1_id(id, player1:player1_id(first_name, last_name), player2:player2_id(first_name, last_name)), team2:team2_id(id, player1:player1_id(first_name, last_name), player2:player2_id(first_name, last_name))')
+      .in('status', ['in_progress', 'En Juego'])
+      .limit(4),
+      
+    // B) Próximos (Traemos un poco más para filtrar strings basura)
+    supabase.from('matches')
+      .select('*, category:categories(name), team1:team1_id(id, player1:player1_id(first_name, last_name), player2:player2_id(first_name, last_name)), team2:team2_id(id, player1:player1_id(first_name, last_name), player2:player2_id(first_name, last_name))')
+      .in('status', ['scheduled', 'Programado'])
+      .not('scheduled_at', 'is', null)
+      .limit(10),
 
-export default function Home() {
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("inicio");
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  
-  const [categories, setCategories] = useState([]);
-  const [pairs, setPairs] = useState({});
-  const [news, setNews] = useState([]);
-  const [matches, setMatches] = useState([]);
+    // C) Últimos Resultados
+    supabase.from('matches')
+      .select('*, category:categories(name), team1:team1_id(id, player1:player1_id(first_name, last_name), player2:player2_id(first_name, last_name)), team2:team2_id(id, player1:player1_id(first_name, last_name), player2:player2_id(first_name, last_name))')
+      .in('status', ['completed', 'walkover', 'Finalizado', 'W.O.'])
+      .limit(10), // Traemos 10 para ordenarlos bien por fecha antes de cortar
 
-  const [isContactOpen, setIsContactOpen] = useState(false);
-  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
-  const [isMatchDetailOpen, setIsMatchDetailOpen] = useState(false);
-  const [isManageCatOpen, setIsManageCatOpen] = useState(false);
-  const [isManagePairsOpen, setIsManagePairsOpen] = useState(false);
-  const [isEditMatchOpen, setIsEditMatchOpen] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+    // D) Categorías para el Selector
+    supabase.from('categories')
+      .select('*')
+      .order('name')
+  ]) || [];
 
-  const openEditMatch = (match) => {
-    setSelectedMatch(match);
-    setIsEditMatchOpen(true);
-  };
+  // Fallbacks seguros por si las respuestas vienen mal formadas
+  const safeLiveRaw = liveRaw || [];
+  const safeUpcomingRaw = upcomingRaw || [];
+  const safeLatestRaw = latestRaw || [];
+  const safeCategories = categories || [];
 
-  useEffect(() => {
-    // Escuchar cambios de sesión
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAdmin(!!session);
-    });
+  // Adaptadores de formato para que coincidan con los props esperados por los Dumb Components
+  const adaptMatch = (m) => ({
+    ...m,
+    category_name: m.category?.name || "Categoría",
+    round_name: m.round,
+    status: m.status,
+    scheduled_at: m.scheduled_at || m.match_datetime
+  });
 
-    // Check inicial de sesión
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAdmin(!!session);
-    });
+  const liveMatches = safeLiveRaw.map(adaptMatch);
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  // Filtrar horarios inválidos y tomar los primeros 4 ordenados
+  const upcomingMatches = safeUpcomingRaw
+    .map(adaptMatch)
+    .filter(m => m.scheduled_at && m.scheduled_at !== "A definir" && m.scheduled_at !== "Automático")
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+    .slice(0, 4);
 
-  const fetchMatches = async () => {
-    try {
-      // Usamos el join para traer la info de player1 y player2
-      const { data, error } = await supabase
-        .from('matches')
-        .select(`
-          *,
-          team1:team1_id (id, player1_name, player2_name),
-          team2:team2_id (id, player1_name, player2_name)
-        `);
-      if (error) {
-        console.error("Error DB al fetchMatches:", error.message, error.details);
-        throw error;
-      }
-      setMatches(data || []);
-    } catch (error) {
-      console.error("Error fetching matches:", error);
-    }
-  };
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        
-        // Fetch Categories
-        const { data: categoriesData, error: catError } = await supabase
-          .from('categories')
-          .select('*');
-        
-        if (catError) {
-          console.error("Error DB (categories):", catError.message, catError.details);
-          throw catError;
-        }
-        setCategories(categoriesData || []);
-        if (categoriesData && categoriesData.length > 0) {
-          setSelectedCategory(categoriesData[0].id);
-        }
-
-        // Fetch Pairs
-        const { data: pairsData, error: pairsError } = await supabase
-          .from('pairs')
-          .select('*');
-          
-        if (pairsError) {
-          console.error("Error DB (pairs):", pairsError.message, pairsError.details);
-          throw pairsError;
-        }
-        const groupedPairs = {};
-        if (pairsData) {
-          pairsData.forEach(p => {
-            if (!groupedPairs[p.category_id]) {
-              groupedPairs[p.category_id] = [];
-            }
-            groupedPairs[p.category_id].push(p);
-          });
-        }
-        setPairs(groupedPairs);
-
-        // Fetch News
-        const { data: newsData, error: newsError } = await supabase
-          .from('news')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (newsError) {
-          console.error("Error DB (news):", newsError.message, newsError.details);
-          throw newsError;
-        }
-        setNews(newsData || []);
-
-        await fetchMatches();
-
-      } catch (error) {
-        console.error("Error fetching data from Supabase:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-navy-950 text-white">
-        <div className="w-12 h-12 border-4 border-copaBlue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-sm font-bold text-slate-300">Cargando datos del torneo...</p>
-      </div>
-    );
-  }
-
-  const handleDeleteNews = async (id) => {
-    if (!isAdmin) return;
-    if (confirm("¿Estás seguro de eliminar esta noticia?")) {
-      try {
-        const { error } = await supabase.from('news').delete().eq('id', id);
-        if (error) {
-          console.error("Error DB:", error.message, error.details);
-          alert("Error DB: " + error.message);
-          return;
-        }
-        setNews(news.filter(n => n.id !== id));
-      } catch (error) {
-        console.error("Error al eliminar noticia:", error);
-      }
-    }
-  };
+  // Tomar los últimos 3 resultados ordenados descendentemente
+  const latestResults = safeLatestRaw
+    .map(adaptMatch)
+    .sort((a, b) => (b.scheduled_at || "").localeCompare(a.scheduled_at || ""))
+    .slice(0, 3);
 
   return (
-    <>
-      <Navbar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        isAdmin={isAdmin} 
-        openContactModal={() => setIsContactOpen(true)} 
-        openAdminModal={() => setIsAdminLoginOpen(true)} 
-      />
+    <div className="min-h-screen bg-navy-950 font-sans text-slate-300">
       
-      <AdminBanner isAdmin={isAdmin} logoutAdmin={handleLogout} />
-      
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === "inicio" && (
-          <TabInicio 
-            categories={categories} 
-            news={news} 
-            setActiveTab={setActiveTab} 
-            openContactModal={() => setIsContactOpen(true)}
-            selectCategory={setSelectedCategory}
-          />
-        )}
+      {/* 1. Hero Section (Diario Deportivo) */}
+      <section className="relative overflow-hidden bg-navy-900 border-b border-navy-800">
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-500/10 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy-800 border border-navy-700 text-brand-400 font-bold text-xs uppercase tracking-widest mb-6">
+            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+            Torneo Oficial
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4">
+            COPA PRIMAVERA
+          </h1>
+          <p className="text-xl md:text-2xl font-medium text-slate-400 mb-10 max-w-2xl mx-auto">
+            Pádel <span className="text-navy-600 font-black">·</span> Competición <span className="text-navy-600 font-black">·</span> Pasión
+          </p>
+          
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link href="/fixture" className="px-8 py-4 bg-brand-500 hover:bg-brand-400 text-navy-950 font-black rounded-xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:scale-105">
+              <i className="fa-solid fa-trophy mr-2"></i> Ver Fixture
+            </Link>
+            <Link href="/programacion" className="px-8 py-4 bg-navy-800 hover:bg-navy-700 text-white font-bold rounded-xl border border-navy-700 transition-all hover:border-brand-500/50">
+              <i className="fa-regular fa-calendar-days mr-2"></i> Horarios
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-20">
         
-        {activeTab === "noticias" && (
-          <TabNoticias 
-            news={news} 
-            isAdmin={isAdmin} 
-            openNewsModal={() => setIsNewsModalOpen(true)} 
-            handleDeleteNews={handleDeleteNews}
-          />
-        )}
-        
-        {activeTab === "fixture" && (
-          <TabFixture 
-            categories={categories} 
-            selectedCategory={selectedCategory} 
-            setSelectedCategory={setSelectedCategory} 
-            isAdmin={isAdmin} 
-            openManageCategoriesModal={() => setIsManageCatOpen(true)}
-            openManagePairsModal={() => setIsManagePairsOpen(true)}
-            pairs={pairs}
-            matches={matches}
-            onFixtureRegenerated={fetchMatches}
-            openEditMatch={openEditMatch}
-          />
+        {/* 2. Sección "En Vivo" (Solo renderiza si hay partidos) */}
+        {liveMatches.length > 0 && (
+          <section className="animate-fade-in-up">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-widest">En Vivo Ahora</h2>
+            </div>
+            
+            <div className="p-1 rounded-2xl bg-gradient-to-r from-red-500/20 via-orange-500/10 to-transparent">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-navy-950/80 rounded-xl backdrop-blur-sm">
+                {liveMatches.map(match => (
+                  <MatchCard key={match.id} match={match} />
+                ))}
+              </div>
+            </div>
+          </section>
         )}
 
-        {isAdmin && activeTab === "programacion" && (
-          <TabProgramacion 
-            categories={categories} 
-            matches={matches}
-            pairs={pairs}
-            isAdmin={isAdmin} 
-            onProgramacionUpdated={fetchMatches}
-          />
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          
+          {/* 3. Próximos Partidos (Columna Principal) */}
+          <section className="lg:col-span-7">
+            <div className="flex items-center justify-between mb-6 border-b border-navy-800 pb-4">
+              <div className="flex items-center gap-3">
+                <i className="fa-regular fa-clock text-brand-500 text-xl"></i>
+                <h2 className="text-2xl font-black text-white">Próximos Partidos</h2>
+              </div>
+              <Link href="/programacion" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">
+                Cartelera Completa <i className="fa-solid fa-arrow-right ml-1"></i>
+              </Link>
+            </div>
+            
+            {upcomingMatches.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {upcomingMatches.map(match => (
+                  <ScheduleRow key={match.id} match={match} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-navy-900/50 border border-navy-800 rounded-xl p-8 text-center">
+                <p className="text-slate-400 font-medium">No hay partidos programados en lo inmediato.</p>
+              </div>
+            )}
+          </section>
+
+          {/* 4. Últimos Resultados (Columna Lateral) */}
+          <section className="lg:col-span-5">
+            <div className="flex items-center justify-between mb-6 border-b border-navy-800 pb-4">
+              <div className="flex items-center gap-3">
+                <i className="fa-solid fa-square-check text-brand-500 text-xl"></i>
+                <h2 className="text-2xl font-black text-white">Últimos Resultados</h2>
+              </div>
+              <Link href="/resultados" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">
+                Ver Todos <i className="fa-solid fa-arrow-right ml-1"></i>
+              </Link>
+            </div>
+            
+            {latestResults.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                {latestResults.map(match => (
+                  <Link key={match.id} href={`/partido/${match.id}`} className="transform hover:-translate-x-1 transition-transform block">
+                    <MatchCard match={match} />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-navy-900/50 border border-navy-800 rounded-xl p-8 text-center">
+                <p className="text-slate-400 font-medium">Aún no hay resultados para mostrar.</p>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* 5. Selector de Categorías Rápido */}
+        <section className="pt-8 border-t border-navy-800">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <i className="fa-solid fa-layer-group text-brand-500 text-xl"></i>
+            <h2 className="text-2xl font-black text-white">Explorar por Categoría</h2>
+          </div>
+          
+          <div className="flex justify-center max-w-4xl mx-auto">
+            <CategorySelector categories={safeCategories} basePath="/fixture/" />
+          </div>
+        </section>
+
       </main>
-
-      <Footer 
-        openContactModal={() => setIsContactOpen(true)} 
-        openAdminModal={() => setIsAdminLoginOpen(true)} 
-      />
-
-      <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
-      <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} />
-      <MatchDetailModal isOpen={isMatchDetailOpen} onClose={() => setIsMatchDetailOpen(false)} />
-      <ManageCategoriesModal isOpen={isManageCatOpen} onClose={() => setIsManageCatOpen(false)} categories={categories} setCategories={setCategories} isAdmin={isAdmin} />
-      <ManagePairsModal isOpen={isManagePairsOpen} onClose={() => setIsManagePairsOpen(false)} selectedCategory={selectedCategory} pairs={pairs} setPairs={setPairs} isAdmin={isAdmin} />
-      <EditMatchModal isOpen={isEditMatchOpen} onClose={() => setIsEditMatchOpen(false)} match={selectedMatch} isAdmin={isAdmin} onSuccess={fetchMatches} />
-      <NewsModal isOpen={isNewsModalOpen} onClose={() => setIsNewsModalOpen(false)} news={news} setNews={setNews} isAdmin={isAdmin} />
-    </>
+    </div>
   );
 }
