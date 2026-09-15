@@ -1,22 +1,14 @@
-import { supabase } from "@/lib/supabase";
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
+import LogoutButton from "@/components/admin/LogoutButton";
 
 export const revalidate = 0;
 
 export default async function AdminLayout({ children }) {
-  // 1. Verificación de Seguridad en Servidor
-  // Nota: Si usas @supabase/ssr, reemplaza esto con la instancia que inyecta cookies()
-  const { data: { user }, error } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    // Expulsar a intrusos
-    // Comentado para desarrollo local si aún no tienes Auth configurado
-    // redirect('/'); 
-  }
 
   return (
-    <div className="flex min-h-screen bg-navy-950 text-slate-300 font-sans">
+    <AdminAuthGuard>
+      <div className="flex min-h-screen bg-navy-950 text-slate-300 font-sans">
       
       {/* Sidebar Desktop (Oculto en mobile muy pequeños, apilable en tablets) */}
       <aside className="w-64 bg-navy-900 border-r border-navy-800 hidden md:flex flex-col">
@@ -49,9 +41,7 @@ export default async function AdminLayout({ children }) {
           <div className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-500">
             <i className="fa-solid fa-shield-halved"></i> Admin Seguro
           </div>
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-colors font-bold text-sm text-slate-400 mt-2">
-            <i className="fa-solid fa-arrow-right-from-bracket w-5"></i> Salir
-          </Link>
+          <LogoutButton />
         </div>
       </aside>
 
@@ -71,6 +61,7 @@ export default async function AdminLayout({ children }) {
         </div>
       </main>
       
-    </div>
+      </div>
+    </AdminAuthGuard>
   );
 }
