@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { TournamentBuilder } from "@/lib/domain/TournamentBuilder";
-import { KnockoutStageService } from "@/lib/domain/KnockoutStageService";
 import { GroupStageService } from "@/lib/domain/GroupStageService";
+import { publishTournamentPhase } from "@/lib/actions/tournament.actions";
 
 export default function TabFixture({ 
   categories, 
@@ -19,6 +19,7 @@ export default function TabFixture({
 }) {
   const [subTab, setSubTab] = useState("zonas"); // 'zonas', 'posiciones', 'knockout'
   const [isGenerating, setIsGenerating] = useState(false);
+  const [qualifiersPerZone, setQualifiersPerZone] = useState(2);
 
   const activeCatObj = categories.find(c => c.id === selectedCategory);
   const categoryMatches = matches.filter(m => m.category_id === selectedCategory);
@@ -53,9 +54,15 @@ export default function TabFixture({
     if (!isAdmin) return;
     if (confirm(`¿Generar Fase de Zonas para "${activeCatObj?.name}"? Se borrarán las zonas actuales y sus resultados.`)) {
       setIsGenerating(true);
-      const success = await GroupStageService.generateGroups(selectedCategory, categoryPairs);
-      if (success && onFixtureRegenerated) {
+      const res = await publishTournamentPhase({
+        categoryId: selectedCategory,
+        pairs: categoryPairs,
+        format: 'groups'
+      });
+      if (res.success && onFixtureRegenerated) {
         await onFixtureRegenerated();
+      } else if (!res.success) {
+        alert(res.error);
       }
       setIsGenerating(false);
     }
@@ -70,8 +77,7 @@ export default function TabFixture({
     if (graph.groups.length > 0) {
       Object.keys(standingsByZone).forEach(zoneId => {
         const zoneStandings = standingsByZone[zoneId];
-        // Tomar top 2
-        qualifiedTeams.push(...zoneStandings.slice(0, 2).map(t => t.id));
+        qualifiedTeams.push(...zoneStandings.slice(0, qualifiersPerZone).map(t => t.id));
       });
     } else {
       qualifiedTeams = categoryPairs.map(p => p.id);
@@ -79,10 +85,16 @@ export default function TabFixture({
 
     if (confirm(`¿Generar Cuadro Eliminatorio (DAG) para "${activeCatObj?.name}" con ${qualifiedTeams.length} participantes? Se borrará el cuadro actual y sus resultados.`)) {
       setIsGenerating(true);
-      const success = await KnockoutStageService.generateBracket(selectedCategory, qualifiedTeams);
-      if (success && onFixtureRegenerated) {
+      const res = await publishTournamentPhase({
+        categoryId: selectedCategory,
+        pairs: qualifiedTeams,
+        format: 'knockout'
+      });
+      if (res.success && onFixtureRegenerated) {
         setSubTab('knockout');
         await onFixtureRegenerated();
+      } else if (!res.success) {
+        alert(res.error);
       }
       setIsGenerating(false);
     }
@@ -122,6 +134,18 @@ export default function TabFixture({
               >
                 <i className="fa-solid fa-layer-group mr-1"></i> 1. Generar Zonas
               </button>
+              <div className="flex items-center gap-2 mr-4">
+                <label className="text-[10px] text-slate-400 font-bold uppercase">Clasifican x Zona:</label>
+                <select 
+                  value={qualifiersPerZone} 
+                  onChange={(e) => setQualifiersPerZone(Number(e.target.value))}
+                  className="bg-navy-800 text-white text-xs border border-navy-700 rounded-lg px-2 py-1 outline-none"
+                >
+                  {[1, 2, 3, 4].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
               <button 
                 onClick={handleGenerateKnockout} 
                 disabled={isGenerating}

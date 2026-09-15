@@ -10,6 +10,7 @@ export default function ResultModal({ match, onClose, onSuccess }) {
     { team1_score: "", team2_score: "" },
   ]);
   const [isWalkover, setIsWalkover] = useState(false);
+  const [woWinnerId, setWoWinnerId] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!match) return null;
@@ -44,7 +45,7 @@ export default function ResultModal({ match, onClose, onSuccess }) {
     // Armamos el JSONB requerido por el motor de dominio
     const resultJson = {
       sets: playedSets,
-      winner_id: null, // El backend lo calculará
+      winner_id: isWalkover ? woWinnerId : null,
       is_walkover: isWalkover
     };
 
@@ -129,22 +130,47 @@ export default function ResultModal({ match, onClose, onSuccess }) {
 
           {/* Walkover */}
           <div className="pt-4 border-t border-navy-800">
-            <label className="flex items-center gap-3 cursor-pointer group w-fit">
+            <label className="flex items-center gap-3 cursor-pointer group w-fit mb-3">
               <input
                 type="checkbox"
                 checked={isWalkover}
-                onChange={(e) => setIsWalkover(e.target.checked)}
+                onChange={(e) => {
+                  setIsWalkover(e.target.checked);
+                  if (e.target.checked && match?.team1_id) setWoWinnerId(match.team1_id);
+                }}
                 className="w-5 h-5 accent-red-500 rounded bg-navy-800 border-navy-700"
               />
               <span className="text-slate-300 font-medium group-hover:text-white transition-colors">
                 Marcar como Walkover (W.O.)
               </span>
             </label>
+            
             {isWalkover && (
-              <p className="text-xs text-orange-400 mt-2">
-                En modo W.O. el sistema avanzará a uno de los equipos asumiendo que el otro no se presentó. 
-                Deberás asignar un 6-0 6-0 manualmente al ganador si deseas que figure así en las estadísticas.
-              </p>
+              <div className="pl-8 space-y-3">
+                <p className="text-xs text-orange-400 font-bold mb-2">Selecciona el ganador por W.O.:</p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="woWinner" 
+                    value={match?.team1_id || ""} 
+                    checked={woWinnerId === match?.team1_id}
+                    onChange={(e) => setWoWinnerId(e.target.value)}
+                    className="accent-brand-500 w-4 h-4"
+                  />
+                  <span className="text-slate-300 text-sm">{t1Name}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="woWinner" 
+                    value={match?.team2_id || ""} 
+                    checked={woWinnerId === match?.team2_id}
+                    onChange={(e) => setWoWinnerId(e.target.value)}
+                    className="accent-brand-500 w-4 h-4"
+                  />
+                  <span className="text-slate-300 text-sm">{t2Name}</span>
+                </label>
+              </div>
             )}
           </div>
 
