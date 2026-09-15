@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import PairForm from "@/components/admin/PairForm";
+import DeletePairButton from "@/components/admin/DeletePairButton";
 
 export const revalidate = 0;
 
@@ -72,9 +73,7 @@ export default async function AdminParejasPage() {
                       {pair.category?.name || "Sin Categoría"}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button disabled className="text-slate-500 hover:text-red-400 transition-colors" title="Eliminar (Pronto)">
-                        <i className="fa-solid fa-trash"></i>
-                      </button>
+                      <DeletePairButton pairId={pair.id} />
                     </td>
                   </tr>
                 ))}

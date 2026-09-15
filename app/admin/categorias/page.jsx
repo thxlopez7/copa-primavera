@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import CategoryForm from "@/components/admin/CategoryForm";
+import DeleteCategoryButton from "@/components/admin/DeleteCategoryButton";
 
 export const revalidate = 0; // Para que el revalidatePath funcione impecable sin caché rancia
 
@@ -40,9 +41,7 @@ export default async function AdminCategoriasPage() {
                   <td className="px-6 py-4 text-slate-500 font-mono text-xs">{cat.id.split('-')[0]}...</td>
                   <td className="px-6 py-4 text-white font-bold">{cat.name}</td>
                   <td className="px-6 py-4 text-right">
-                    <button disabled className="text-slate-500 hover:text-red-400 transition-colors" title="Eliminar (Pronto)">
-                      <i className="fa-solid fa-trash"></i>
-                    </button>
+                    <DeleteCategoryButton categoryId={cat.id} />
                   </td>
                 </tr>
               ))}

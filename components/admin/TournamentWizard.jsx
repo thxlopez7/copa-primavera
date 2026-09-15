@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { publishTournamentPhase } from "@/lib/actions/tournament.actions";
+import TournamentTreeViewer from "./TournamentTreeViewer";
 
 export default function TournamentWizard({ categories, allPairs }) {
   const [step, setStep] = useState(1);
@@ -57,12 +58,11 @@ export default function TournamentWizard({ categories, allPairs }) {
 
     if (res.success) {
       setFeedback({ type: 'success', message: '¡Torneo generado con éxito!' });
-      // Reset después de 3 seg
+      // En lugar de resetear, pasamos al paso 5 para ver el cuadro
       setTimeout(() => {
-        setStep(1);
-        setCategoryId("");
+        setStep(5);
         setFeedback(null);
-      }, 3000);
+      }, 1500);
     } else {
       setFeedback({ type: 'error', message: res.error || 'Error al generar el torneo.' });
     }
@@ -285,6 +285,17 @@ export default function TournamentWizard({ categories, allPairs }) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* PASO 5: Resultado / Visor de Árbol */}
+      {step === 5 && (
+        <TournamentTreeViewer 
+          categoryId={categoryId} 
+          onReset={() => {
+            setStep(1);
+            setCategoryId("");
+          }}
+        />
       )}
     </div>
   );
