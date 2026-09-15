@@ -14,6 +14,7 @@ export default function AdminMatchListClient({ initialCategories, initialPairs, 
     autoMatch ? autoMatch.category_id : (initialCategories && initialCategories.length > 0 ? initialCategories[0].id : "")
   );
   const [filterState, setFilterState] = useState("Programado"); // Programado, Finalizado, ALL
+  const [filterZone, setFilterZone] = useState("ALL");
   
   const matchWithTeams = autoMatch ? {
     ...autoMatch,
@@ -26,9 +27,12 @@ export default function AdminMatchListClient({ initialCategories, initialPairs, 
 
   const categoryMatches = (initialMatches || []).filter(m => m !== null && m.category_id === selectedCategory);
   
+  const uniqueZones = [...new Set(categoryMatches.map(m => m.result?.group_name).filter(Boolean))].sort();
+
   const filteredMatches = categoryMatches.filter(m => {
-    if (filterState === "ALL") return true;
-    return m.status === filterState;
+    if (filterState !== "ALL" && m.status !== filterState) return false;
+    if (filterZone !== "ALL" && m.result?.group_name !== filterZone) return false;
+    return true;
   }).sort((a, b) => {
     // 1. Priorizar partidos que ya tienen los contrincantes definidos
     const aHasTeams = a.team1_id && a.team2_id ? 0 : 1;
@@ -99,16 +103,30 @@ export default function AdminMatchListClient({ initialCategories, initialPairs, 
       <section className="bg-navy-900 border border-navy-800 rounded-3xl overflow-hidden shadow-lg">
         <div className="p-4 border-b border-navy-800 bg-navy-950/50 flex flex-col sm:flex-row justify-between items-center gap-4">
           <h3 className="font-bold text-white"><i className="fa-solid fa-pen text-brand-500 mr-2"></i> Partidos Listos para Cargar</h3>
-          <div className="flex bg-navy-900 rounded-lg p-1 border border-navy-800">
-            {["Programado", "Finalizado", "ALL"].map(state => (
-              <button 
-                key={state}
-                onClick={() => setFilterState(state)}
-                className={`text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors ${filterState === state ? 'bg-brand-500 text-navy-950' : 'text-slate-400 hover:text-white'}`}
+          <div className="flex items-center gap-4">
+            {uniqueZones.length > 0 && (
+              <select 
+                value={filterZone} 
+                onChange={(e) => setFilterZone(e.target.value)} 
+                className="bg-navy-900 border border-navy-800 text-slate-300 font-bold rounded-lg px-3 py-1.5 text-[10px] uppercase outline-none focus:border-brand-500 transition-colors"
               >
-                {state === "ALL" ? "TODOS" : state}
-              </button>
-            ))}
+                <option value="ALL">TODAS LAS ZONAS</option>
+                {uniqueZones.map(zone => (
+                  <option key={zone} value={zone}>ZONA {zone}</option>
+                ))}
+              </select>
+            )}
+            <div className="flex bg-navy-900 rounded-lg p-1 border border-navy-800">
+              {["Programado", "Finalizado", "ALL"].map(state => (
+                <button 
+                  key={state}
+                  onClick={() => setFilterState(state)}
+                  className={`text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors ${filterState === state ? 'bg-brand-500 text-navy-950' : 'text-slate-400 hover:text-white'}`}
+                >
+                  {state === "ALL" ? "TODOS" : state}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

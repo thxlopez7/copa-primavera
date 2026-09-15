@@ -13,7 +13,6 @@ export default function TournamentWizard({ categories, allPairs }) {
   const [categoryId, setCategoryId] = useState("");
   const [selectedPairIds, setSelectedPairIds] = useState([]);
   const [format, setFormat] = useState("groups"); // 'groups', 'knockout', 'both'
-  const [groupsCount, setGroupsCount] = useState(1);
   const [qualifiedCount, setQualifiedCount] = useState(4); // Para bracket
 
   // Filtra las parejas por la categoría seleccionada
@@ -49,7 +48,6 @@ export default function TournamentWizard({ categories, allPairs }) {
       pairs: pairsToProcess,
       format,
       settings: {
-        groupsCount: parseInt(groupsCount) || 1,
         qualifiedCount: parseInt(qualifiedCount) || pairsToProcess.length
       }
     };
@@ -178,15 +176,14 @@ export default function TournamentWizard({ categories, allPairs }) {
             </div>
 
             {(format === 'groups' || format === 'both') && (
-              <div className="p-4 bg-navy-950/50 rounded-xl border border-navy-800 animate-fade-in-up">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cantidad de Grupos (Zonas)</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  value={groupsCount}
-                  onChange={(e) => setGroupsCount(e.target.value)}
-                  className="w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-500"
-                />
+              <div className="p-4 bg-navy-950/50 rounded-xl border border-brand-500/30 animate-fade-in-up">
+                <div className="flex items-start gap-3">
+                  <i className="fa-solid fa-robot text-brand-500 mt-0.5"></i>
+                  <div>
+                    <h4 className="text-sm font-bold text-white mb-1">Cálculo Automático de Zonas</h4>
+                    <p className="text-xs text-slate-400">El motor calculará la distribución óptima de zonas (3-4 parejas por zona) y sorteará los equipos automáticamente.</p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -246,7 +243,7 @@ export default function TournamentWizard({ categories, allPairs }) {
               {(format === 'groups' || format === 'both') && (
                 <li className="flex justify-between border-b border-navy-800 pb-2">
                   <span className="text-slate-400">Zonas</span>
-                  <span className="font-bold text-white">{groupsCount} Grupos</span>
+                  <span className="font-bold text-brand-400">Distribución Automática</span>
                 </li>
               )}
               {(format === 'knockout' || format === 'both') && (
